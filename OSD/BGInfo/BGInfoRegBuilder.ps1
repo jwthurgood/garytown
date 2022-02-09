@@ -8,6 +8,7 @@ Changes
 2022.01.28
  - Changed Get-TPM to using Get-CimInstance -Namespace "ROOT\cimv2\Security\MicrosoftTpm" -ClassName Win32_TPM
 2022.02.08 - Modified for OSD Prestart to be used with BGInfo Command @gwblok
+2022.02.08 - Added Manufacturer, Model & Unique ID (I use Unique ID for Driver Pack Matching)
 
 #>
 
@@ -588,6 +589,31 @@ $Null = New-ItemProperty -Path $RegistryPath -Name WinPEName -Value $ComputerNam
 #CM Info:
 if(Test-Path "$env:SystemDrive\sms\bin\x64\TSManager.exe"){$TSManager = get-item "$env:SystemDrive\sms\bin\x64\TSManager.exe"}
 $Null = New-ItemProperty -Path $RegistryPath -Name TSManagerVer -Value $TSManager.VersionInfo.ProductVersion -PropertyType String -Force
+
+#Machine Info:
+$SMSTSMake = (Get-CimInstance -ClassName Win32_ComputerSystem).Manufacturer
+$Null = New-ItemProperty -Path $RegistryPath -Name SMSTSMake -Value $SMSTSMake -PropertyType String -Force
+
+$SMSTSModel = (Get-CimInstance -ClassName Win32_ComputerSystem).Mode
+if ($SMSTSMake -eq "LENOVO"){
+    $UniqueID = ((Get-WmiObject -Class Win32_ComputerSystemProduct | Select-Object -ExpandProperty Name).SubString(0, 4)).Trim()
+    $ModelFriendly = (Get-CimInstance -ClassName Win32_ComputerSystemProduct).Version 
+    }
+elseif($SMSTSMake -match "Dell"){
+    $UniqueID = (Get-CimInstance -ClassName Win32_ComputerSystem).SystemSKUNumber
+    $ModelFriendly = $SMSTSModel
+    }
+elseif(($SMSTSMake -match "HP") -or ($SMSTSMake -match "Hewlett")){
+    $UniqueID = (Get-CimInstance -Namespace root/cimv2 -ClassName Win32_BaseBoard).Product
+    $ModelFriendly = $SMSTSModel
+    }
+else{
+    $UniqueID = (Get-CimInstance -Namespace root/cimv2 -ClassName Win32_BaseBoard).Product
+    $ModelFriendly = $SMSTSModel
+    }
+
+$Null = New-ItemProperty -Path $RegistryPath -Name UniqueID -Value $UniqueID -PropertyType String -Force
+$Null = New-ItemProperty -Path $RegistryPath -Name ModelFriendly -Value $ModelFriendly -PropertyType String -Force
 
 Start-Process -FilePath ./bginfo64.exe -ArgumentList "WinPE-PreStart.BGI /nolicprompt /silent /timer:0"
 
