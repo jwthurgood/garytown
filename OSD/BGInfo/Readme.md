@@ -3,6 +3,9 @@
 ## Prestart Commands
 cmd.exe /c powershell.exe -executionpolicy bypass .\BGInfoRegBuilder.ps1
 
+## TS Run Command Line Step to Trigger BGInfo
+bginfo64.exe WinPE-TSStarted.bgi /nolicprompt /silent /timer:0
+
 ## Folder
 - Bginfo64.exe
 - WinPE-PreStart.bgi | Used during Pre-Start
@@ -30,7 +33,6 @@ cmd.exe /c powershell.exe -executionpolicy bypass .\BGInfoRegBuilder.ps1
 
 ## In the Task Sequence
 
-BGInfoTS01
 [![BGInfoTS02](BGInfoTS02.png)](BGInfoTS02.png)
 [![BGInfoTS03](BGInfoTS03.png)](BGInfoTS03.png)
 [![BGInfoTS01](BGInfoTS01.png)](BGInfoTS01.png)
