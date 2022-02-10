@@ -16,5 +16,6 @@ cmd.exe /c powershell.exe -executionpolicy bypass .\BGInfoRegBuilder.ps1
   - https://github.com/gwblok/garytown/blob/master/OSD/gather.ps1
 
 [![InWinPE](BGInfoInWinPE.png)](BGInfoInWinPE.png)
+[![BGInfoInWinPEInTS](BGInfoInWinPEInTS.png)](BGInfoInWinPEInTS.png)
 [![Folder](BGInfoFolder.png)](BGInfoFolder.png)
 [![CMBootImage](BGInfoBootMediaPreStart.png)](BGInfoBootMediaPreStart.png)
