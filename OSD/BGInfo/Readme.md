@@ -15,7 +15,6 @@ cmd.exe /c powershell.exe -executionpolicy bypass .\BGInfoRegBuilder.ps1
 - 2022.02.09 - Added 2nd set of files for Once the TS Starts, requires Gather Step run.
   - https://github.com/gwblok/garytown/blob/master/OSD/gather.ps1
 
-[![InWinPE](BGInfoInWinPE.png)](BGInfoInWinPE.png)
-[![BGInfoInWinPEInTS](BGInfoInWinPEInTS.png)](BGInfoInWinPEInTS.png)
+
 [![Folder](BGInfoFolder.png)](BGInfoFolder.png)
 [![CMBootImage](BGInfoBootMediaPreStart.png)](BGInfoBootMediaPreStart.png)
