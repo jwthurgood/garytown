@@ -62,15 +62,15 @@ try {
     $InWinPE = $ts.value('_SMSTSInWinPE')
     if ($ts.Value("LogPath") -ne "") {
         $LogPath = $ts.Value("LogPath") + "\RemoveApps.Log"   #MDT
-        Write-Host "Running within TS, Set $LogPath\RemoveApps.log"
+        Write-Host "Running within TS, Set $LogPath"
     }
     elseif ($ts.Value("_SMSTSLogPath") -ne "") {
         $LogPath = $ts.Value("_SMSTSLogPath") + "\RemoveApps.Log"  #SCCM
-        Write-Host "Running within TS, Set $LogPath\RemoveApps.log"
+        Write-Host "Running within TS, Set $LogPath"
     }
     else{
         $LogPath = $env:TEMP + "\RemoveApps.Log"  #Temp
-        Write-Host "Can't find TS Var for Logs, Set $env:TEMP\RemoveApps.log"
+        Write-Host "Can't find TS Var for Logs, Set $LogPath"
     }
         
 }
