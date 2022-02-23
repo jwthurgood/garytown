@@ -57,7 +57,7 @@ $LogFolder = $tsenv.value('LogFolder')
 catch{
 Write-Output "Not in TS"
     }
-if (!($LogFolder)){$LogFolder = "$env:ProgramData\RecastSoftwareIT\OSD\Logs"}
+if (!($LogFolder)){$LogFolder = "$env:ProgramData\OSD\Logs"}
 if (!(Test-Path -path $LogFolder)){$Null = new-item -Path $LogFolder -ItemType Directory -Force}
 
 
@@ -88,11 +88,11 @@ Write-Output "UPDATE Defender Package Script version $ScriptVer..."
 $Intermediate = "$env:TEMP\DefenderScratchSpace"
 
 if(!(Test-Path -Path "$Intermediate")) {
-    New-Item -Path "$env:TEMP" -Name "DefenderScratchSpace" -ItemType Directory
+    $Null = New-Item -Path "$env:TEMP" -Name "DefenderScratchSpace" -ItemType Directory
 }
 
 if(!(Test-Path -Path "$Intermediate\x64")) {
-    New-Item -Path "$Intermediate" -Name "x64" -ItemType Directory
+    $Null = New-Item -Path "$Intermediate" -Name "x64" -ItemType Directory
 }
 
 Remove-Item -Path "$Intermediate\x64\*" -Force -EA SilentlyContinue
@@ -117,17 +117,6 @@ if(Test-Path -Path $Dest) {
         Write-Output "Starting MPAM-FE Install of $Version1b to $Version1a"
         Write-CMTraceLog -Message "Starting MPAM-FE Install of $Version1b to $Version1a" -Type 1
         $MPAMInstall = Start-Process -FilePath $Dest -Wait -PassThru
-        #Confirm
-        Start-Sleep -Seconds 10
-        [version]$Version1c = (Get-MpComputerStatus).AMServiceVersion #Installed
-        if ($Version1a -eq $Version1c){
-            Write-Output "Successfully Updates MPAM-FE of $Version21 to $Version1a"
-            Write-CMTraceLog -Message "Successfully Updates MPAM-FE of $Version1b to $Version1a" -Type 1
-            }
-        else{
-            Write-Output "Failed to Update MPAM-FE of $Version1b to $Version1a"
-            Write-CMTraceLog -Message "Failed to Update MPAM-FE of $Version1b to $Version1a" -Type 1
-            }
         }
     else
         {
@@ -162,17 +151,6 @@ if(Test-Path -Path $Dest) {
         Write-Output "Starting Update Platform Install of $Version2b to $Version2a"
         Write-CMTraceLog -Message "Starting Update Platform Install of $Version2b to $Version2a" -Type 1
         $UPInstall = Start-Process -FilePath $Dest -Wait -PassThru
-        #Confirm
-        Start-Sleep -Seconds 10
-        [version]$Version2c = (Get-MpComputerStatus).AMServiceVersion #Installed
-        if ($Version2a -eq $Version2c){
-            Write-Output "Successfully Updates Update Platform of $Version2b to $Version2a"
-            Write-CMTraceLog -Message "Successfully Updates Update Platform of $Version2b to $Version2a" -Type 1
-            }
-        else{
-            Write-Output "Failed to Update Update Platform of $Version2b to $Version2a"
-            Write-CMTraceLog -Message "Failed to Update Update Platform of $Version2b to $Version2a" -Type 1
-            }
         }
     else
         {
