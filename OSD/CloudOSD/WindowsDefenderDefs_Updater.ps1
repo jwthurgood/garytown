@@ -26,13 +26,13 @@ Function Write-CMTraceLog {
 		    $ErrorMessage,
  
 		    [Parameter(Mandatory=$false)]
-		    $Component = "SchTask",
+		    $Component = "OSDCloud",
  
 		    [Parameter(Mandatory=$false)]
 		    [int]$Type,
 		
 		    [Parameter(Mandatory=$false)]
-		    $LogFile = "$LogFolder\MSDefenderUpdater.log"
+		    $LogFile = "$LogFolder\OSDCloud.log"
 	    )
     <#
     Type: 1 = Normal, 2 = Warning (yellow), 3 = Error (red)
@@ -52,12 +52,14 @@ Function Write-CMTraceLog {
 
 try {
 $tsenv = new-object -comobject Microsoft.SMS.TSEnvironment
+$SMSTSLogsPath = $tsenv.value('_SMSTSLogPath')
 $LogFolder = $tsenv.value('LogFolder')
+if (!($LogFolder)){$LogFolder = $SMSTSLogsPath}
     }
 catch{
 Write-Output "Not in TS"
-    }
 if (!($LogFolder)){$LogFolder = "$env:ProgramData\OSD\Logs"}
+    }
 if (!(Test-Path -path $LogFolder)){$Null = new-item -Path $LogFolder -ItemType Directory -Force}
 
 
@@ -65,6 +67,8 @@ if (!(Test-Path -path $LogFolder)){$Null = new-item -Path $LogFolder -ItemType D
 
 
 $ScriptVer = "2022.02.22.1"
+$Component = "WinDefenderDefs"
+$LogFile = "$LogFolder\MSDefenderUpdater.log"
 
 # Source Addresses - Defender for Windows 10, 8.1 ################################
 
