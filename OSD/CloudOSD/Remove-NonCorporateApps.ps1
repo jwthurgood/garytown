@@ -17,6 +17,13 @@ https://blogs.technet.microsoft.com/mniehaus/2015/11/11/removing-windows-10-in-b
 .LINK 
 https://blogs.technet.microsoft.com/mniehaus/2015/11/23/seeing-extra-apps-turn-them-off/
 
+
+Original Script by Keith Garner
+Modified by Gary Blok (@GWBLOK)
+
+22.02.23.01
+ - Removed Parameters so it would work via Invoke-RestMethod
+ - Added Logic to be able to run in WinPE to remove items offline & again online to clean up the rest... expect errors in logs.
 #>
 
 
