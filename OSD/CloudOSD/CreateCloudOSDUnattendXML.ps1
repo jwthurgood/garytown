@@ -28,13 +28,13 @@ Function Write-CMTraceLog {
 		    $ErrorMessage,
  
 		    [Parameter(Mandatory=$false)]
-		    $Component = "SchTask",
+		    $Component = "CloudOSD",
  
 		    [Parameter(Mandatory=$false)]
 		    [int]$Type,
 		
 		    [Parameter(Mandatory=$false)]
-		    $LogFile = "$LogFolder\MSDefenderUpdater.log"
+		    $LogFile = "$LogFolder\CloudOSD.log"
 	    )
     <#
     Type: 1 = Normal, 2 = Warning (yellow), 3 = Error (red)
@@ -60,12 +60,13 @@ if (!($LogFolder)){$LogFolder = $SMSTSLogsPath}
     }
 catch{
 Write-Output "Not in TS"
+if (!($LogFolder)){$LogFolder = $env:TEMP}
     }
 if (!(Test-Path -path $LogFolder)){$Null = new-item -Path $LogFolder -ItemType Directory -Force}
 
 $ScriptVer = "2022.02.22.1"
-
-
+$Component = "Unattend"
+$LogFile = "$LogFolder\CloudOSD.log"
 
 Write-Output "Starting script to create unattend file & create TS Varaibles"
 Write-CMTraceLog -Message "=====================================================" -Type 1
