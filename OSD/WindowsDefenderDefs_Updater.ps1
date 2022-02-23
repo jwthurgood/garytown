@@ -118,6 +118,7 @@ if(Test-Path -Path $Dest) {
         Write-CMTraceLog -Message "Starting MPAM-FE Install of $Version1b to $Version1a" -Type 1
         $MPAMInstall = Start-Process -FilePath $Dest -Wait -PassThru
         #Confirm
+        Start-Sleep -Seconds 10
         [version]$Version1c = (Get-MpComputerStatus).AMServiceVersion #Installed
         if ($Version1a -eq $Version1c){
             Write-Output "Successfully Updates MPAM-FE of $Version21 to $Version1a"
@@ -162,6 +163,7 @@ if(Test-Path -Path $Dest) {
         Write-CMTraceLog -Message "Starting Update Platform Install of $Version2b to $Version2a" -Type 1
         $UPInstall = Start-Process -FilePath $Dest -Wait -PassThru
         #Confirm
+        Start-Sleep -Seconds 10
         [version]$Version2c = (Get-MpComputerStatus).AMServiceVersion #Installed
         if ($Version2a -eq $Version2c){
             Write-Output "Successfully Updates Update Platform of $Version2b to $Version2a"
