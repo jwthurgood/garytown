@@ -1,7 +1,7 @@
-﻿<#  GARY BLOK - RecastSoftware.com @gwblok
+<#  GARY BLOK - RecastSoftware.com @gwblok
 2022.02.15
 
-Update PowerShellGet & PackageManagement
+Update PowerShellGet and PackageManagement
 #>
 
 $WorkingDir = $env:TEMP
