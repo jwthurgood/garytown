@@ -1,4 +1,4 @@
-#Gary Blok @GWBLOK - Settings and Process taken from 2PintSoftware.com's recommendations. 
+#Gary Blok GWBLOK - Settings and Process taken from 2PintSoftware.com's recommendations. 
 
 Write-Output "Set the BranchCache Port Variable"
 Write-Output "the default is 80 so we want to change this to avoid conflicts with other apps that might use that port."
