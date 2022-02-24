@@ -1,4 +1,5 @@
-﻿<#Gary Blok | @gwblok | Recast Software
+<#
+Gary Blok | gwblok | Recast Software
 
 This script will do a bunch of things.
 
