@@ -1,266 +1,231 @@
-<# Gary Blok @GWBLOK Recast Software
+<#  Version 2020.04.08 - Creator @gwblok - GARYTOWN.COM
+    Used to download BIOS Updates from HP
+    Grabs BIOS Files based on your CM Package Structure... based on this: https://github.com/gwblok/garytown/blob/master/hardware/CreateCMPackages_BIOS_Drivers.ps1
 
-Much of script borrowed form SMSAgent's Blog: https://smsagent.blog/2021/03/30/deploying-hp-bios-updates-a-real-world-example/
-Parts used are for downloading and extracting HPIA - Thank you Trevor!
+    REQUIREMENTS:  HP Client Management Script Library
+    Download / Installer: https://ftp.hp.com/pub/caps-softpaq/cmit/hp-cmsl.html  
+    Docs: https://developers.hp.com/hp-client-management/doc/client-management-script-library-0
+    
+    Usage... Stage Prod or Pre-Prod.
+    If you don't do Pre-Prod... just delete that Param section out and set $Stage = Prod or remove all Stage references complete, do whatever you want I guess.
 
-Leveraging this with custom driver package:
-/Offlinemode:<path to offline repository>
+    If you have a Proxy, you'll have to modify for that.
 
+
+    Updates 
+    2022.01.28
+     - Changed to Support Download and Create WIM files from Driver Packs.
+     - Added loop to find the latest driver package available
+
+
+    2022.02.27 - Major Changes!
+     - Levearing new script from HP (New-HPDriverPack.ps1) https://github.com/gwblok/garytown/blob/master/hardware/HP/New-HPDriverPack.ps1
+      - This builds a most updated driver pack of inf files that can be DISM'd into the Offline OS
+      - AKA - no longer uses the driver pack softpaqs provided by HP, instead it builds one on the fly with updated drivers.
+     - Created HPIA Repo in the Online Folder
+      - Leveraging HPCMSL commands to create and sync a repository.. currently just set for Drivers and Firmware.
+
+
+    Future enhancements planed DBA:
+     - Intergrate with HPIA to create "Online" section of drivers to update drivers once in Full OS
+      - Partly done, the script now creates the Online section in the WIM file, now I just need to build a step in the TS to apply them.
+      - I'll update this script with a link to how that can be done.
 
 #>
+[CmdletBinding()]
+    Param (
+		    [Parameter(Mandatory=$true,Position=1,HelpMessage="Stage")]
+            [ValidateNotNullOrEmpty()]
+            [ValidateSet("Pre-Prod", "Prod")]
+		    $Stage = "Prod"
+
+ 	    )
 
 
-# HPIA User Guide: https://ftp.ext.hp.com/pub/caps-softpaq/cmit/whitepapers/HPIAUserGuide.pdf
 
 
-# Params
-$HPIAWebUrl = "https://ftp.hp.com/pub/caps-softpaq/cmit/HPIA.html" # Static web page of the HP Image Assistant
-$script:FolderPath = "HPIA" # the subfolder to put logs into in the storage container
-$ProgressPreference = 'SilentlyContinue' # to speed up web requests
+#Script Vars
+$SiteCode = "MEM"
+$ScatchLocation = "E:\DedupExclude"
+$HPStaging = "E:\HPStaging"
+$HPRepoStaging = "$HPStaging\HPRepoStaging"
+$DismScratchPath = "$ScatchLocation\DISM"
+$Date = (Get-Date -Format "yyyyMMdd")
 
-$LogFolder = "$env:ProgramData\RecastSoftwareIT\Logs"
-try{[void][System.IO.Directory]::CreateDirectory($LogFolder)}
-catch{throw}
+#Reset Vars
+$Driver = ""
+$Model = ""
 
-# HPIA Arguments
-$Operation = "Analyze" #/Operation:[Analyze|DownloadSoftPaqs] 
-$Category = "All" #/Category:[All,BIOS,Drivers,Software,Firmware,Accessories]
-$Selection = "All" #/Selection:[All,Critical,Recommended,Routine]
-$Action = "Install" #/Action:[List|Download|Extract|Install|UpdateCVA]
+#HPCMSL Vars
+$OS = 'win10'
 
-# Function write to a log file in ccmtrace format
-Function script:Write-Log {
+#Load CM PowerShell
+Import-Module (Join-Path $(Split-Path $env:SMS_ADMIN_UI_PATH) ConfigurationManager.psd1)
+Set-Location -Path "$($SiteCode):"
 
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$Message,
-		
-        [Parameter()]
-        [ValidateSet(1, 2, 3)] # 1-Info, 2-Warning, 3-Error
-        [int]$LogLevel = 1,
+#To Select
+$HPModelsSelectTable = Get-CMPackage -Fast -Name "Driver*" | Where-Object {$_.Manufacturer -eq "HP" -and $_.Mifname -eq $Stage} |Select-Object -Property "Name","MIFFilename","PackageID", "Version" | Sort-Object $_.MIFFilename | Out-GridView -Title "Select the Models you want to Update" -PassThru
+$HPModelsTable = Get-CMPackage -Fast -Name "Driver*" | Where-Object {$_.PackageID -in $HPModelsSelectTable.PackageID}
 
-        [Parameter(Mandatory = $true)]
-        [string]$Component,
 
-        [Parameter(Mandatory = $false)]
-        [object]$Exception
-    )
+#$HPModelsTable = Get-CMPackage -Fast -Id "PS2004AA"
 
-    $LogFile = "$env:ProgramData\RecastSoftwareIT\Logs\HPIA.log"
+Set-Location -Path "$env:TEMP"
+Write-Output "Starting Script: $scriptName"
+
+
+
+
+foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
+    {
+    #Reset
+    $RequiresUpdate = $false
     
-    If ($Exception)
-    {
-        [String]$Message = "$Message" + "$Exception"
-    }
+    #Get required Info from CM Package to pass to HPCMSL
+    Write-Host "Starting Process for $($Model.MIFFilename)" -ForegroundColor Green
+    $PlatformCode = $Model.Language
+    $PlatformName =  (Get-HPDeviceDetails -platform $PlatformCode).name
+    $MaxBuild = ((Get-HPDeviceDetails -platform $PlatformCode -oslist | Where-Object {$_.OperatingSystem -eq "Microsoft Windows 10"}).OperatingSystemRelease | measure -Maximum).Maximum
+    if ($PlatformName.Count -gt 1)
+        {
+        $NameMatch = ($model.MIFFilename).Split(" ") | Select-Object -First 3
+        $PlatformName = $PlatformName | Where-Object {$_ -match $NameMatch}
+        } 
 
-    $TimeGenerated = "$(Get-Date -Format HH:mm:ss).$((Get-Date).Millisecond)+000"
-    $Line = '<![LOG[{0}]LOG]!><time="{1}" date="{2}" component="{3}" context="" type="{4}" thread="" file="">'
-    $LineFormat = $Message, $TimeGenerated, (Get-Date -Format MM-dd-yyyy), $Component, $LogLevel
-    $Line = $Line -f $LineFormat
+    #Create the Driver Package (INF Files / Offline) - uses New-HPDriverPack Script
+    Write-Host "Starting script New-HPDriverPack -platform $PlatformName -OS $OS -OSVer $MaxBuild -DownloadPath $HPStaging" -ForegroundColor Green
+    & '\\src\SRC$\Scripts\New-HPDriverPack.ps1' -platform $PlatformName -OS $OS -OSVer $MaxBuild -DownloadPath "$HPStaging" -OutFormat None
+
+    #Create HPIA Repo & Sync for this Platform (EXE / Online)
+    Write-Host "Starting HPCMSL to create HPIA Repo for $platformName" -ForegroundColor Green
+    $HPIARepoModelPath = "$HPRepoStaging\$PlatformCode"
+    New-Item -Path "$HPIARepoModelPath\$date" -ItemType Directory | Out-Null
+    Set-Location -Path "$HPIARepoModelPath\$date"
+
+    Initialize-Repository
+    Set-RepositoryConfiguration -Setting OfflineCacheMode -CacheValue Enable
+    Add-RepositoryFilter -Platform $PlatformCode -Os $OS -OsVer $MaxBuild -Category Driver, Firmware
+    Invoke-RepositorySync
+
+
+
+    #Get Current Driver CMPackage Version from CM & Setup Download Location
+    Set-Location -Path "$($SiteCode):"
+    $PackageInfo = $Model
+    $PackageInfoVersion = $null
+    $PackageInfoVersion = $PackageInfo.Version
+    $PackageSource = $PackageInfo.PkgSourcePath
+    Set-Location -Path "$env:TEMP"
+        
     
-    # Write to log
-    Add-Content -Value $Line -Path $LogFile -ErrorAction SilentlyContinue
+    #Determine Driver Pack (Offline) - If already Current, or if needs updating.
+    #Get Folders Info
+    $PreviousDP = Get-ChildItem -Path "$HPStaging\DriverPack" | Where-Object {$_.name -match $PlatformCode -and $_.Attributes -eq "Directory" -and $_.Name -notmatch $Date} | Select-Object -Last 1
+    $CurrentDP = Get-ChildItem -Path "$HPStaging\DriverPack" | Where-Object {$_.name -match $PlatformCode -and $_.Attributes -eq "Directory" -and $_.Name -match $Date} | Select-Object -Last 1
+    
+    #Get SoftPaq Info
+    $PreviousDPInfo = Get-ChildItem -Path $PreviousDP.FullName | Where-Object {$_.Attributes -eq "Directory"}
+    $CurrentDPInfo = Get-ChildItem -Path $CurrentDP.FullName | Where-Object {$_.Attributes -eq "Directory"}
 
-}
-
-
-
-
-
-try {
-    $tsenv = New-Object -ComObject Microsoft.SMS.TSEnvironment
-
-
-    }
-catch{
-    Write-Output "!NOT Running in Task Sequence!"
-
-    }
-
-if ($tsenv)
-    {
-    Write-Output "Running in Task Sequence"
-    $DriverPath = $($tsenv.Value('DRIVERS01'))
-    $HPIAPath = $($tsenv.Value('HPIA01'))
-    $script:WorkingDirectory = $HPIAPath
-    $Offlinefolder = "$DriverPath\Online"
-    $ReportFolder = "$env:TEMP\HPReport"
-    if ((Test-Path $WorkingDirectory) -and (Test-Path $Offlinefolder)){
-        Write-Output "HPIA Path = $HPIAPath"
-        Write-Output "HPIA Repo Path = $Offlinefolder"
-        Write-Output  "$HPIAArgList = /Offlinemode:$Offlinefolder /Operation:$Operation /Category:$Category /Selection:$Selection /Action:$Action /Silent /ReportFolder:$ReportFolder"
-        $HPIAArgList = "/Offlinemode:$Offlinefolder /Operation:$Operation /Category:$Category /Selection:$Selection /Action:$Action /Silent /ReportFolder:$ReportFolder"
-        Write-Log -Message "#######################" -Component "Preparation"
-        Write-Log -Message "## Starting HPIA update run in TS Offline Repo Mode ##" -Component "Preparation"
-        Write-Log -Message "## HPIA Path = $HPIAPath ##" -Component "Preparation"
-        Write-Log -Message "## HPIA Repo Path = $Offlinefolder ##" -Component "Preparation"
-        Write-Log -Message "## $HPIAArgList ##" -Component "Preparation"
-        Write-Log -Message "#######################" -Component "Preparation"
+    #Compare Softpaqs from CUrrent & Previous Run
+    foreach ($name in $CurrentDPInfo.name){
+        if ($name -in $PreviousDPInfo.name){
+            #Write-Output "Update was in previous Custom Driver Pack: $name"
+            }
+        else
+            {
+            Write-Host "CHANGE! - New Driver: $name" -ForegroundColor Green
+            $RequiresUpdate = $true
+            }
         }
-    else {
-        Write-Output "Failed to find HPIA or Repo Folders"
-        Write-Output "HPIA Path = $HPIAPath"
-        Write-Output "HPIA Repo Path = $Offlinefolder"
-        Write-Output "Will attempt to Download and apply updates from HP.COM"
-        $HPIAArgList = "/Operation:$Operation /Category:$Category /Selection:$Selection /Action:$Action /Silent /ReportFolder:$ReportFolder"
-        Write-Log -Message "#######################" -Component "Preparation"
-        Write-Log -Message "## Starting HPIA update run in Online Mode ##" -Component "Preparation"
-        Write-Log -Message "## HPIA Path = $HPIAPath ##" -Component "Preparation"
-        Write-Log -Message "## HPIA Repo Path = $Offlinefolder ##" -Component "Preparation"
-        Write-Log -Message "## $HPIAArgList ##" -Component "Preparation"
-        Write-Log -Message "#######################" -Component "Preparation"
+    
+
+    #Determine HPIA Rep (Online) - If already Current, or if needs updating.
+    $PreviousHPIA = Get-ChildItem -Path $HPIARepoModelPath | Where-Object {$_.Attributes -eq "Directory" -and $_.Name -notmatch $Date} | Select-Object -Last 1
+    $CurrentHPIA = Get-ChildItem -Path $HPIARepoModelPath | Where-Object {$_.Attributes -eq "Directory" -and $_.Name -match $Date} | Select-Object -Last 1
+
+    #Get SoftPaq Info
+    $PreviousHPIAInfo = Get-ChildItem -Path $PreviousHPIA.FullName -Filter "*.exe"
+    $CurrentHPIAInfo = Get-ChildItem -Path $CurrentHPIA.FullName -Filter "*.exe"
+
+
+    foreach ($name in $CurrentHPIAInfo.name){
+        if ($name -in $PreviousHPIAInfo.name){
+            #Write-Output "Update was in previous Custom Driver Pack: $name"
+            
+            }
+        else
+            {
+            Write-Host "CHANGE! - New Driver: $name" -ForegroundColor Green
+            $RequiresUpdate = $true
+            }
         }
-    }
-else {
-    Write-Output "Will attempt to Download and apply updates from HP.COM"
-    $RootFolder = $env:ProgramData
-    $ParentFolderName = "RecastSoftwareIT"
-    $ChildFolderName = "HPIA"
-    $script:WorkingDirectory = "$RootFolder\$ParentFolderName\$ChildFolderName\"
-    $ReportFolder = "$WorkingDirectory\Report" 
-    $HPIAArgList = "/Operation:$Operation /Category:$Category /Selection:$Selection /Action:$Action /Silent /ReportFolder:$ReportFolder"
-    Write-Log -Message "#######################" -Component "Preparation"
-    Write-Log -Message "## Starting HPIA update run in Online ##" -Component "Preparation"
-    Write-Log -Message "#######################" -Component "Preparation"
-    }
-
-if (!($tsenv)){
-    ################################
-    ## Create Directory Structure ##
-    ################################
-    try{[void][System.IO.Directory]::CreateDirectory($WorkingDirectory)}
-    catch{throw}
-
-    #################################
-    ## Disable IE First Run Wizard ##
-    #################################
-    # This prevents an error running Invoke-WebRequest when IE has not yet been run in the current context
-    Write-Log -Message "Disabling IE first run wizard" -Component "Preparation"
-    $null = New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft" -Name "Internet Explorer" -Force
-    $null = New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer" -Name "Main" -Force
-    $null = New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer\Main" -Name "DisableFirstRunCustomize" -PropertyType DWORD -Value 1 -Force
 
 
-    ##########################
-    ## Get latest HPIA Info ##
-    ##########################
-    Write-Log -Message "Finding info for latest version of HP Image Assistant (HPIA)" -Component "DownloadHPIA"
-    try
-    {
-        $HTML = Invoke-WebRequest -Uri $HPIAWebUrl -ErrorAction Stop
-    }
-    catch 
-    {
-        Write-Log -Message "Failed to download the HPIA web page. $($_.Exception.Message)" -Component "DownloadHPIA" -LogLevel 3
-        Upload-LogFilesToAzure
-        throw
-    }
-    $HPIASoftPaqNumber = ($HTML.Links | Where {$_.href -match "hp-hpia-"}).outerText
-    $HPIADownloadURL = ($HTML.Links | Where {$_.href -match "hp-hpia-"}).href
-    $HPIAFileName = $HPIADownloadURL.Split('/')[-1]
-    Write-Log -Message "SoftPaq number is $HPIASoftPaqNumber" -Component "DownloadHPIA"
-    Write-Log -Message "Download URL is $HPIADownloadURL" -Component "DownloadHPIA"
-
-
-    ###################
-    ## Download HPIA ##
-    ###################
-    Write-Log -Message "Downloading the HPIA" -Component "DownloadHPIA"
-    try 
-    {
-        $ExistingBitsJob = Get-BitsTransfer -Name "$HPIAFileName" -AllUsers -ErrorAction SilentlyContinue
-        If ($ExistingBitsJob)
+    if ($RequiresUpdate -ne $true)#No Updates Available
         {
-            Write-Log -Message "An existing BITS tranfer was found. Cleaning it up." -Component "DownloadHPIA" -LogLevel 2
-            Remove-BitsTransfer -BitsJob $ExistingBitsJob
+        #Cleanup the download since it was the same as the last time.
+        Write-Host "No changes needed, cleaning up temp file downloads" -ForegroundColor Yellow
+        remove-item -Path "$HPStaging\DriverPack\*.zip" -Force
+        Remove-Item -Path $CurrentDP.FullName -Recurse -Force
+        Remove-Item -Path $CurrentHPIA.FullName -Recurse -Force
+        Write-Host "No changes to CM Package for $($PackageInfo.Name)" -ForegroundColor Yellow
         }
-        $BitsJob = Start-BitsTransfer -Source $HPIADownloadURL -Destination $WorkingDirectory\$HPIAFileName -Asynchronous -DisplayName "$HPIAFileName" -Description "HPIA download" -RetryInterval 60 -ErrorAction Stop 
-        do {
-            Start-Sleep -Seconds 5
-            $Progress = [Math]::Round((100 * ($BitsJob.BytesTransferred / $BitsJob.BytesTotal)),2)
-            Write-Log -Message "Downloaded $Progress`%" -Component "DownloadHPIA"
-        } until ($BitsJob.JobState -in ("Transferred","Error"))
-        If ($BitsJob.JobState -eq "Error")
+
+    else #Updates Needed to Package
         {
-            Write-Log -Message "BITS tranfer failed: $($BitsJob.ErrorDescription)" -Component "DownloadHPIA" -LogLevel 3
-            Upload-LogFilesToAzure
-            throw
+        #Temporary Place to download the softpaq EXE
+        $CapturePath = "$HPStaging\HPCustomDriverPack"
+        if (test-path "$CapturePath"){Remove-Item -Path $CapturePath -Force -Recurse}
+        New-Item -Path $CapturePath -ItemType Directory | Out-Null
+        New-Item -Path "$CapturePath\Offline" -ItemType Directory | Out-Null
+        New-Item -Path "$CapturePath\Online" -ItemType Directory | Out-Null
+        
+        #Copy Offline Driver Pack Files    
+        Copy-Item -Path $CurrentDP.FullName -Destination "$CapturePath\Offline" -Recurse
+        
+        #Copy Offline Driver Pack Files
+        Copy-Item "$($CurrentHPIA.FullName)\*" -Destination "$CapturePath\Online" -Recurse
+
+        #Cleanup Package Source Folder Contents & Prepare for new WIM File
+        if (Test-Path $($Model.PkgSourcePath)) {Remove-Item $($Model.PkgSourcePath) -Force -Recurse -ErrorAction SilentlyContinue}
+        $Null = New-Item -Path $($Model.PkgSourcePath) -ItemType Directory -Force 
+
+        # Cleanup Previous Runs (Deletes the files)
+        $TargetVersion = $date
+        if (Test-Path $dismscratchpath) {Remove-Item $DismScratchPath -Force -Recurse -ErrorAction SilentlyContinue}
+        $DismScratch = New-Item -Path $DismScratchPath -ItemType Directory -Force
+        Write-Host "Creating WIM file: $($Model.PkgSourcePath)\Drivers.wim" -ForegroundColor Green
+        New-WindowsImage -ImagePath "$($Model.PkgSourcePath)\Drivers.wim" -CapturePath "$CapturePath" -Name "$($Model.MIFFilename) - $($Model.Language)"  -LogPath "$env:TEMP\dism-$($Model.MIFFilename).log" -ScratchDirectory $dismscratchpath
+        $ReadmeContents = "Model: $($Model.Name) | Pack Version: $TargetVersion | CM PackageID: $($Model.PackageID)"
+        $ReadmeContents | Out-File -FilePath "$($Model.PkgSourcePath)\Version-$($Date).txt"
+        Set-Location -Path "$($SiteCode):"
+        Update-CMDistributionPoint -PackageId $Model.PackageID
+        Set-Location -Path "$env:TEMP"
+        [int]$DriverWIMSize = "{0:N2}" -f ((Get-ChildItem $($Model.PkgSourcePath) -Recurse | Measure-Object -Property Length -Sum -ErrorAction Stop).Sum / 1MB)
+        [int]$DriverExtractSize = "{0:N2}" -f ((Get-ChildItem $CapturePath -Recurse | Measure-Object -Property Length -Sum -ErrorAction Stop).Sum / 1MB)
+
+        Write-Host " Finished Build Driver WIM Process, WIM size: $DriverWIMSize vs Expaneded: $DriverExtractSize" -ForegroundColor Green
+        Write-Host " WIM Savings: $($DriverExtractSize - $DriverWIMSize) MB | $(100 - $([MATH]::Round($($DriverWIMSize / $DriverExtractSize)*100))) %" -ForegroundColor Green
+
+        Write-Host "  Confirming Package Info in ConfigMgr $($PackageInfo.Name) ID: $($Model.PackageID)" -ForegroundColor yellow
+        Import-Module (Join-Path $(Split-Path $env:SMS_ADMIN_UI_PATH) ConfigurationManager.psd1)
+        Set-Location -Path "$($SiteCode):"         
+        Set-CMPackage -Id $Model.PackageID -Version $date
+        Set-CMPackage -Id $Model.PackageID -MIFVersion ""
+        Set-CMPackage -Id $Model.PackageID -Description "Updated Offline & Online Drivers on $Date"
+        $PackageInfo = Get-CMPackage -Id $Model.PackageID -Fast
+        Update-CMDistributionPoint -PackageId $Model.PackageID
+        Set-Location -Path $env:TEMP
+        Write-Host "Updated Package $($PackageInfo.Name), ID $($Model.PackageID)" -ForegroundColor Gray
         }
-        Write-Log -Message "Download is finished" -Component "DownloadHPIA"
-        Complete-BitsTransfer -BitsJob $BitsJob
-        Write-Log -Message "BITS transfer is complete $WorkingDirectory\$HPIAFileName" -Component "DownloadHPIA"
-    }
-    catch 
-    {
-        Write-Log -Message "Failed to start a BITS transfer for the HPIA: $($_.Exception.Message)" -Component "DownloadHPIA" -LogLevel 3
-        Upload-LogFilesToAzure
-        throw
-    }
+   
 
 
-    ##################
-    ## Extract HPIA ##
-    ##################
-    Write-Log -Message "Extracting the HPIA" -Component "Analyze"
-    try 
-    {
-        $Process = Start-Process -FilePath $WorkingDirectory\$HPIAFileName -WorkingDirectory $WorkingDirectory -ArgumentList "/s /f .\HPIA\ /e" -NoNewWindow -PassThru -Wait -ErrorAction Stop
-        Start-Sleep -Seconds 5
-        If (Test-Path $WorkingDirectory\HPIA\HPImageAssistant.exe)
-        {
-            Write-Log -Message "Extraction complete" -Component "Analyze"
-        }
-        Else  
-        {
-            Write-Log -Message "HPImageAssistant not found!" -Component "Analyze" -LogLevel 3
-            Upload-LogFilesToAzure
-            throw
-        }
-    }
-    catch 
-    {
-        Write-Log -Message "Failed to extract the HPIA: $($_.Exception.Message)" -Component "Analyze" -LogLevel 3
-        Upload-LogFilesToAzure
-        throw
-    }
+    
+    Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
+#>
+    }  
 
-    }
 
-##############################################
-## Install Updates from Drivers WIM via HPIA ##
-##############################################
-Write-Log -Message "Installing Updates for HP" -Component "Analyze"
-try 
-{
-    $Process = Start-Process -FilePath $WorkingDirectory\HPIA\HPImageAssistant.exe -WorkingDirectory $WorkingDirectory -ArgumentList $HPIAArgList -NoNewWindow -PassThru -Wait -ErrorAction Stop
-    If ($Process.ExitCode -eq 0)
-    {
-        Write-Log -Message "Analysis complete" -Component "Analyze"
-    }
-    elseif ($Process.ExitCode -eq 256) 
-    {
-        Write-Log -Message "The analysis returned no recommendation. No BIOS update is available at this time" -Component "Analyze" -LogLevel 2
-        Exit 0
-    }
-    elseif ($Process.ExitCode -eq 4096) 
-    {
-        Write-Log -Message "This platform is not supported!" -Component "Analyze" -LogLevel 2
-        throw
-    }
-    elseif ($Process.ExitCode -eq 3010) 
-    {
-        Write-Log -Message "This system requires a restart!" -Component "Analyze" -LogLevel 2
-    }
-    Else
-    {
-        Write-Log -Message "Process exited with code $($Process.ExitCode). Expecting 0." -Component "Analyze" -LogLevel 3
-        throw
-    }
-}
-catch 
-{
-    Write-Log -Message "Failed to start the HPImageAssistant.exe: $($_.Exception.Message)" -Component "Analyze" -LogLevel 3
-    throw
-}
-
-exit $Process.ExitCode
+Write-Output "Finished Script: $scriptName"
