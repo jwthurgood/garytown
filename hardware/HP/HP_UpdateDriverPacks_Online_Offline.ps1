@@ -45,8 +45,6 @@
 
 
 #Script Vars
-#$OS = "Win10"
-#$Category = "bios"
 $SiteCode = "MEM"
 $ScatchLocation = "E:\DedupExclude"
 $HPStaging = "E:\HPStaging"
@@ -196,6 +194,7 @@ foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
         $TargetVersion = $date
         if (Test-Path $dismscratchpath) {Remove-Item $DismScratchPath -Force -Recurse -ErrorAction SilentlyContinue}
         $DismScratch = New-Item -Path $DismScratchPath -ItemType Directory -Force
+        Write-Host "Creating WIM file: $($Model.PkgSourcePath)\Drivers.wim" -ForegroundColor Green
         New-WindowsImage -ImagePath "$($Model.PkgSourcePath)\Drivers.wim" -CapturePath "$CapturePath" -Name "$($Model.MIFFilename) - $($Model.Language)"  -LogPath "$env:TEMP\dism-$($Model.MIFFilename).log" -ScratchDirectory $dismscratchpath
         $ReadmeContents = "Model: $($Model.Name) | Pack Version: $TargetVersion | CM PackageID: $($Model.PackageID)"
         $ReadmeContents | Out-File -FilePath "$($Model.PkgSourcePath)\Version-$($Date).txt"
@@ -205,7 +204,7 @@ foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
         [int]$DriverWIMSize = "{0:N2}" -f ((Get-ChildItem $($Model.PkgSourcePath) -Recurse | Measure-Object -Property Length -Sum -ErrorAction Stop).Sum / 1MB)
         [int]$DriverExtractSize = "{0:N2}" -f ((Get-ChildItem $CapturePath -Recurse | Measure-Object -Property Length -Sum -ErrorAction Stop).Sum / 1MB)
 
-        Write-Host " Finished Expand & WIM Process, WIM size: $DriverWIMSize vs Expaneded: $DriverExtractSize" -ForegroundColor Green
+        Write-Host " Finished Build Driver WIM Process, WIM size: $DriverWIMSize vs Expaneded: $DriverExtractSize" -ForegroundColor Green
         Write-Host " WIM Savings: $($DriverExtractSize - $DriverWIMSize) MB | $(100 - $([MATH]::Round($($DriverWIMSize / $DriverExtractSize)*100))) %" -ForegroundColor Green
 
         Write-Host "  Confirming Package Info in ConfigMgr $($PackageInfo.Name) ID: $($Model.PackageID)" -ForegroundColor yellow
