@@ -1,0 +1,216 @@
+<#  Version 2020.04.08 - Creator @gwblok - GARYTOWN.COM
+    Used to download BIOS Updates from HP
+    Grabs BIOS Files based on your CM Package Structure... based on this: https://github.com/gwblok/garytown/blob/master/hardware/CreateCMPackages_BIOS_Drivers.ps1
+
+    REQUIREMENTS:  HP Client Management Script Library
+    Download / Installer: https://ftp.hp.com/pub/caps-softpaq/cmit/hp-cmsl.html  
+    Docs: https://developers.hp.com/hp-client-management/doc/client-management-script-library-0
+    
+    Usage... Stage Prod or Pre-Prod.
+    If you don't do Pre-Prod... just delete that Param section out and set $Stage = Prod or remove all Stage references complete, do whatever you want I guess.
+
+    If you have a Proxy, you'll have to modify for that.
+
+
+    Updates 
+    2022.01.28
+     - Changed to Support Download and Create WIM files from Driver Packs.
+     - Added loop to find the latest driver package available
+
+    Future enhancements planed DBA:
+     - Intergrate with HPIA to create "Online" section of drivers to update drivers once in Full OS
+
+    2022.02.27 - Major C
+
+#>
+[CmdletBinding()]
+    Param (
+		    [Parameter(Mandatory=$true,Position=1,HelpMessage="Stage")]
+            [ValidateNotNullOrEmpty()]
+            [ValidateSet("Pre-Prod", "Prod")]
+		    $Stage = "Prod"
+
+ 	    )
+
+
+
+
+#Script Vars
+#$OS = "Win10"
+#$Category = "bios"
+$SiteCode = "MEM"
+$ScatchLocation = "E:\DedupExclude"
+$HPStaging = "E:\HPStaging"
+$HPRepoStaging = "E:\HPRepoStaging"
+$DismScratchPath = "$ScatchLocation\DISM"
+$Date = (Get-Date -Format "yyyyMMdd")
+
+#Reset Vars
+$Driver = ""
+$Model = ""
+
+#HPCMSL Vars
+$OS = 'win10'
+
+#Load CM PowerShell
+Import-Module (Join-Path $(Split-Path $env:SMS_ADMIN_UI_PATH) ConfigurationManager.psd1)
+Set-Location -Path "$($SiteCode):"
+
+#To Select
+$HPModelsSelectTable = Get-CMPackage -Fast -Name "Driver*" | Where-Object {$_.Manufacturer -eq "HP" -and $_.Mifname -eq $Stage} |Select-Object -Property "Name","MIFFilename","PackageID", "Version" | Sort-Object $_.MIFFilename | Out-GridView -Title "Select the Models you want to Update" -PassThru
+$HPModelsTable = Get-CMPackage -Fast -Name "Driver*" | Where-Object {$_.PackageID -in $HPModelsSelectTable.PackageID}
+
+
+#$HPModelsTable = Get-CMPackage -Fast -Id "PS2004AA"
+
+Set-Location -Path "C:"
+Write-Output "Starting Script: $scriptName"
+
+
+
+
+foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
+    {
+    #Reset
+    $RequiresUpdate = $false
+    
+    Write-Host "Starting Process for $($Model.MIFFilename)" -ForegroundColor Green
+    $PlatformCode = $Model.Language
+    $PlatformName =  (Get-HPDeviceDetails -platform $PlatformCode).name
+    if ($PlatformName.Count -gt 1)
+        {
+        $NameMatch = ($model.MIFFilename).Split(" ") | Select-Object -First 3
+        $PlatformName = $PlatformName | Where-Object {$_ -match $NameMatch}
+        }
+    
+    $MaxBuild = ((Get-HPDeviceDetails -platform $PlatformCode -oslist | Where-Object {$_.OperatingSystem -eq "Microsoft Windows 10"}).OperatingSystemRelease | measure -Maximum).Maximum
+
+    & '\\src\SRC$\Scripts\New-HPDriverPack.ps1' -platform $PlatformName -OS $OS -OSVer $MaxBuild -DownloadPath "$HPStaging" -OutFormat zip
+
+   $HPIARepoModelPath = "$HPRepoStaging\$PlatformCode"
+    New-Item -Path "$HPIARepoModelPath\$date" -ItemType Directory | Out-Null
+    Set-Location -Path "$HPIARepoModelPath\$date"
+
+    Initialize-Repository
+    Set-RepositoryConfiguration -Setting OfflineCacheMode
+    Add-RepositoryFilter -Platform $PlatformCode -Os $OS -OsVer $MaxBuild -Category Driver, Firmware
+    Invoke-RepositorySync
+
+
+
+    #Get Current Driver CMPackage Version from CM & Setup Download Location
+
+    Set-Location -Path "$($SiteCode):"
+    $PackageInfo = $Model
+    $PackageInfoVersion = $null
+    $PackageInfoVersion = $PackageInfo.Version
+    $PackageSource = $PackageInfo.PkgSourcePath
+    Set-Location -Path "C:"
+        
+    
+    #Determine Driver Pack (Offline) - If already Current, or if needs updating.
+    #Get Folders Info
+    $PreviousDP = Get-ChildItem -Path "$HPStaging\DriverPack" | Where-Object {$_.name -match $PlatformCode -and $_.Attributes -eq "Directory" -and $_.Name -notmatch $Date} | Select-Object -Last 1
+    $CurrentDP = Get-ChildItem -Path "$HPStaging\DriverPack" | Where-Object {$_.name -match $PlatformCode -and $_.Attributes -eq "Directory" -and $_.Name -match $Date} | Select-Object -Last 1
+    
+    #Get SoftPaq Info
+    $PreviousDPInfo = Get-ChildItem -Path $PreviousDP.FullName | Where-Object {$_.Attributes -eq "Directory"}
+    $CurrentDPInfo = Get-ChildItem -Path $CurrentDP.FullName | Where-Object {$_.Attributes -eq "Directory"}
+
+    #Compare Softpaqs from CUrrent & Previous Run
+    foreach ($name in $CurrentDPInfo.name){
+        if ($name -in $PreviousDPInfo.name){
+            #Write-Output "Update was in previous Custom Driver Pack: $name"
+            $RequiresUpdate = $true
+            }
+        else
+            {
+            Write-Host "CHANGE! - New Driver: $name" -ForegroundColor Green
+            }
+        }
+    
+
+    #Determine HPIA Rep (Online) - If already Current, or if needs updating.
+    $PreviousHPIA = Get-ChildItem -Path $HPIARepoModelPath | Where-Object {$_.Attributes -eq "Directory" -and $_.Name -notmatch $Date} | Select-Object -Last 1
+    $CurrentHPIA = Get-ChildItem -Path $HPIARepoModelPath | Where-Object {$_.Attributes -eq "Directory" -and $_.Name -match $Date} | Select-Object -Last 1
+
+    #Get SoftPaq Info
+    $PreviousHPIAInfo = Get-ChildItem -Path $PreviousHPIA.FullName -Filter "*.exe"
+    $CurrentHPIAInfo = Get-ChildItem -Path $CurrentHPIA.FullName -Filter "*.exe"
+
+
+    foreach ($name in $CurrentHPIAInfo.name){
+        if ($name -in $PreviousHPIAInfo.name){
+            #Write-Output "Update was in previous Custom Driver Pack: $name"
+            $RequiresUpdate = $true
+            }
+        else
+            {
+            Write-Host "CHANGE! - New Driver: $name" -ForegroundColor Green
+            }
+        }
+
+
+    if ($RequiresUpdate -ne $true)
+        {
+        #Cleanup the download since it was the same as the last time.
+        Write-Host "No changes needed, cleaning up temp file downloads"
+        remove-item -Path "$HPStaging\DriverPack\*.zip" -Force
+        Remove-Item -Path $CurrentDP.FullName -Recurse -Force
+        Remove-Item -Path $CurrentHPIA.FullName -Recurse -Force
+        }
+
+    else #Download & Extract
+        {
+        #Temporary Place to download the softpaq EXE
+        $CapturePath = "$HPStaging\HPCustomDriverPack"
+        if (test-path "$CapturePath"){Remove-Item -Path $CapturePath -Force -Recurse}
+        New-Item -Path $CapturePath -ItemType Directory | Out-Null
+        New-Item -Path "$CapturePath\Offline" -ItemType Directory | Out-Null
+        New-Item -Path "$CapturePath\Online" -ItemType Directory | Out-Null
+        
+        #Copy Offline Driver Pack Files    
+        Copy-Item -Path $CurrentDP.FullName -Destination "$CapturePath\Offline" -Recurse
+        
+        #Copy Offline Driver Pack Files
+        Copy-Item "$($CurrentHPIA.FullName)\*" -Destination "$CapturePath\Online" -Recurse
+
+        #Cleanup Package Source Folder Contents & Prepare for new WIM File
+        if (Test-Path $($Model.PkgSourcePath)) {Remove-Item $($Model.PkgSourcePath) -Force -Recurse -ErrorAction SilentlyContinue}
+        $Null = New-Item -Path $($Model.PkgSourcePath) -ItemType Directory -Force 
+
+        # Cleanup Previous Runs (Deletes the files)
+        $TargetVersion = $date
+        if (Test-Path $dismscratchpath) {Remove-Item $DismScratchPath -Force -Recurse -ErrorAction SilentlyContinue}
+        $DismScratch = New-Item -Path $DismScratchPath -ItemType Directory -Force
+        New-WindowsImage -ImagePath "$($Model.PkgSourcePath)\Drivers.wim" -CapturePath "$CapturePath" -Name "$($Model.MIFFilename) - $($Model.Language)"  -LogPath "$env:TEMP\dism-$($Model.MIFFilename).log" -ScratchDirectory $dismscratchpath
+        $ReadmeContents = "Model: $($Model.Name) | Pack Version: $TargetVersion | CM PackageID: $($Model.PackageID)"
+        $ReadmeContents | Out-File -FilePath "$($Model.PkgSourcePath)\Version-$($Date).txt"
+        Set-Location -Path "$($SiteCode):"
+        Update-CMDistributionPoint -PackageId $Model.PackageID
+        Set-Location -Path "C:"
+        [int]$DriverWIMSize = "{0:N2}" -f ((Get-ChildItem $($Model.PkgSourcePath) -Recurse | Measure-Object -Property Length -Sum -ErrorAction Stop).Sum / 1MB)
+        [int]$DriverExtractSize = "{0:N2}" -f ((Get-ChildItem $CapturePath -Recurse | Measure-Object -Property Length -Sum -ErrorAction Stop).Sum / 1MB)
+
+        Write-Host " Finished Expand & WIM Process, WIM size: $DriverWIMSize vs Expaneded: $DriverExtractSize" -ForegroundColor Green
+        Write-Host " WIM Savings: $($DriverExtractSize - $DriverWIMSize) MB | $(100 - $([MATH]::Round($($DriverWIMSize / $DriverExtractSize)*100))) %" -ForegroundColor Green
+
+        Remove-Item -Path $CapturePath -Force -Recurse
+        }
+   
+    Write-Host "  Confirming Package Info in ConfigMgr $($PackageInfo.Name) ID: $($Model.PackageID)" -ForegroundColor yellow
+    Import-Module (Join-Path $(Split-Path $env:SMS_ADMIN_UI_PATH) ConfigurationManager.psd1)
+    Set-Location -Path "$($SiteCode):"         
+    Set-CMPackage -Id $Model.PackageID -Version $date
+    Set-CMPackage -Id $Model.PackageID -MIFVersion ""
+    Set-CMPackage -Id $Model.PackageID -Description "Updated Offline & Online Drivers on $Date"
+    $PackageInfo = Get-CMPackage -Id $Model.PackageID -Fast
+    Update-CMDistributionPoint -PackageId $Model.PackageID
+    Set-Location -Path "C:"
+    Write-Host "Updated Package $($PackageInfo.Name), ID $($Model.PackageID) to $($DriverInfo.Id) which was released $($DriverInfo.ReleaseDate)" -ForegroundColor Gray
+     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
+#>
+    }  
+
+
+Write-Output "Finished Script: $scriptName"
