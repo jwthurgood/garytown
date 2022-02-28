@@ -17,14 +17,19 @@
      - Changed to Support Download and Create WIM files from Driver Packs.
      - Added loop to find the latest driver package available
 
-    Future enhancements planed DBA:
-     - Intergrate with HPIA to create "Online" section of drivers to update drivers once in Full OS
 
     2022.02.27 - Major Changes!
      - Levearing new script from HP (New-HPDriverPack.ps1) https://github.com/gwblok/garytown/blob/master/hardware/HP/New-HPDriverPack.ps1
       - This builds a most updated driver pack of inf files that can be DISM'd into the Offline OS
+      - AKA - no longer uses the driver pack softpaqs provided by HP, instead it builds one on the fly with updated drivers.
      - Created HPIA Repo in the Online Folder
       - Leveraging HPCMSL commands to create and sync a repository.. currently just set for Drivers and Firmware.
+
+
+    Future enhancements planed DBA:
+     - Intergrate with HPIA to create "Online" section of drivers to update drivers once in Full OS
+      - Partly done, the script now creates the Online section in the WIM file, now I just need to build a step in the TS to apply them.
+      - I'll update this script with a link to how that can be done.
 
 #>
 [CmdletBinding()]
@@ -67,7 +72,7 @@ $HPModelsTable = Get-CMPackage -Fast -Name "Driver*" | Where-Object {$_.PackageI
 
 #$HPModelsTable = Get-CMPackage -Fast -Id "PS2004AA"
 
-Set-Location -Path "C:"
+Set-Location -Path "$env:TEMP"
 Write-Output "Starting Script: $scriptName"
 
 
@@ -78,38 +83,38 @@ foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
     #Reset
     $RequiresUpdate = $false
     
+    #Get required Info from CM Package to pass to HPCMSL
     Write-Host "Starting Process for $($Model.MIFFilename)" -ForegroundColor Green
     $PlatformCode = $Model.Language
     $PlatformName =  (Get-HPDeviceDetails -platform $PlatformCode).name
+    $MaxBuild = ((Get-HPDeviceDetails -platform $PlatformCode -oslist | Where-Object {$_.OperatingSystem -eq "Microsoft Windows 10"}).OperatingSystemRelease | measure -Maximum).Maximum
     if ($PlatformName.Count -gt 1)
         {
         $NameMatch = ($model.MIFFilename).Split(" ") | Select-Object -First 3
         $PlatformName = $PlatformName | Where-Object {$_ -match $NameMatch}
-        }
-    
-    $MaxBuild = ((Get-HPDeviceDetails -platform $PlatformCode -oslist | Where-Object {$_.OperatingSystem -eq "Microsoft Windows 10"}).OperatingSystemRelease | measure -Maximum).Maximum
+        } 
 
+    #Create the Driver Package (INF Files / Offline) - uses New-HPDriverPack Script
     & '\\src\SRC$\Scripts\New-HPDriverPack.ps1' -platform $PlatformName -OS $OS -OSVer $MaxBuild -DownloadPath "$HPStaging" -OutFormat zip
 
-   $HPIARepoModelPath = "$HPRepoStaging\$PlatformCode"
+    #Create HPIA Repo & Sync for this Platform (EXE / Online)
+    $HPIARepoModelPath = "$HPRepoStaging\$PlatformCode"
     New-Item -Path "$HPIARepoModelPath\$date" -ItemType Directory | Out-Null
     Set-Location -Path "$HPIARepoModelPath\$date"
 
     Initialize-Repository
-    Set-RepositoryConfiguration -Setting OfflineCacheMode
     Add-RepositoryFilter -Platform $PlatformCode -Os $OS -OsVer $MaxBuild -Category Driver, Firmware
     Invoke-RepositorySync
 
 
 
     #Get Current Driver CMPackage Version from CM & Setup Download Location
-
     Set-Location -Path "$($SiteCode):"
     $PackageInfo = $Model
     $PackageInfoVersion = $null
     $PackageInfoVersion = $PackageInfo.Version
     $PackageSource = $PackageInfo.PkgSourcePath
-    Set-Location -Path "C:"
+    Set-Location -Path "$env:TEMP"
         
     
     #Determine Driver Pack (Offline) - If already Current, or if needs updating.
@@ -125,11 +130,11 @@ foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
     foreach ($name in $CurrentDPInfo.name){
         if ($name -in $PreviousDPInfo.name){
             #Write-Output "Update was in previous Custom Driver Pack: $name"
-            $RequiresUpdate = $true
             }
         else
             {
             Write-Host "CHANGE! - New Driver: $name" -ForegroundColor Green
+            $RequiresUpdate = $true
             }
         }
     
@@ -146,11 +151,12 @@ foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
     foreach ($name in $CurrentHPIAInfo.name){
         if ($name -in $PreviousHPIAInfo.name){
             #Write-Output "Update was in previous Custom Driver Pack: $name"
-            $RequiresUpdate = $true
+            
             }
         else
             {
             Write-Host "CHANGE! - New Driver: $name" -ForegroundColor Green
+            $RequiresUpdate = $true
             }
         }
 
@@ -192,14 +198,14 @@ foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
         $ReadmeContents | Out-File -FilePath "$($Model.PkgSourcePath)\Version-$($Date).txt"
         Set-Location -Path "$($SiteCode):"
         Update-CMDistributionPoint -PackageId $Model.PackageID
-        Set-Location -Path "C:"
+        Set-Location -Path "$env:TEMP"
         [int]$DriverWIMSize = "{0:N2}" -f ((Get-ChildItem $($Model.PkgSourcePath) -Recurse | Measure-Object -Property Length -Sum -ErrorAction Stop).Sum / 1MB)
         [int]$DriverExtractSize = "{0:N2}" -f ((Get-ChildItem $CapturePath -Recurse | Measure-Object -Property Length -Sum -ErrorAction Stop).Sum / 1MB)
 
         Write-Host " Finished Expand & WIM Process, WIM size: $DriverWIMSize vs Expaneded: $DriverExtractSize" -ForegroundColor Green
         Write-Host " WIM Savings: $($DriverExtractSize - $DriverWIMSize) MB | $(100 - $([MATH]::Round($($DriverWIMSize / $DriverExtractSize)*100))) %" -ForegroundColor Green
 
-        Remove-Item -Path $CapturePath -Force -Recurse
+        #Remove-Item -Path $CapturePath -Force -Recurse
         }
    
     Write-Host "  Confirming Package Info in ConfigMgr $($PackageInfo.Name) ID: $($Model.PackageID)" -ForegroundColor yellow
