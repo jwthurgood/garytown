@@ -20,7 +20,11 @@
     Future enhancements planed DBA:
      - Intergrate with HPIA to create "Online" section of drivers to update drivers once in Full OS
 
-    2022.02.27 - Major C
+    2022.02.27 - Major Changes!
+     - Levearing new script from HP (New-HPDriverPack.ps1) https://github.com/gwblok/garytown/blob/master/hardware/HP/New-HPDriverPack.ps1
+      - This builds a most updated driver pack of inf files that can be DISM'd into the Offline OS
+     - Created HPIA Repo in the Online Folder
+      - Leveraging HPCMSL commands to create and sync a repository.. currently just set for Drivers and Firmware.
 
 #>
 [CmdletBinding()]
