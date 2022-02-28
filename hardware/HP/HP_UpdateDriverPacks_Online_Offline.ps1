@@ -50,7 +50,7 @@
 $SiteCode = "MEM"
 $ScatchLocation = "E:\DedupExclude"
 $HPStaging = "E:\HPStaging"
-$HPRepoStaging = "E:\HPRepoStaging"
+$HPRepoStaging = "$HPStaging\HPRepoStaging"
 $DismScratchPath = "$ScatchLocation\DISM"
 $Date = (Get-Date -Format "yyyyMMdd")
 
@@ -95,9 +95,11 @@ foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
         } 
 
     #Create the Driver Package (INF Files / Offline) - uses New-HPDriverPack Script
-    & '\\src\SRC$\Scripts\New-HPDriverPack.ps1' -platform $PlatformName -OS $OS -OSVer $MaxBuild -DownloadPath "$HPStaging" -OutFormat zip
+    Write-Host "Starting script New-HPDriverPack -platform $PlatformName -OS $OS -OSVer $MaxBuild -DownloadPath $HPStaging" -ForegroundColor Green
+    & '\\src\SRC$\Scripts\New-HPDriverPack.ps1' -platform $PlatformName -OS $OS -OSVer $MaxBuild -DownloadPath "$HPStaging" -OutFormat None
 
     #Create HPIA Repo & Sync for this Platform (EXE / Online)
+    Write-Host "Starting HPCMSL to create HPIA Repo for $platformName" -ForegroundColor Green
     $HPIARepoModelPath = "$HPRepoStaging\$PlatformCode"
     New-Item -Path "$HPIARepoModelPath\$date" -ItemType Directory | Out-Null
     Set-Location -Path "$HPIARepoModelPath\$date"
@@ -161,16 +163,17 @@ foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
         }
 
 
-    if ($RequiresUpdate -ne $true)
+    if ($RequiresUpdate -ne $true)#No Updates Available
         {
         #Cleanup the download since it was the same as the last time.
-        Write-Host "No changes needed, cleaning up temp file downloads"
+        Write-Host "No changes needed, cleaning up temp file downloads" -ForegroundColor Yellow
         remove-item -Path "$HPStaging\DriverPack\*.zip" -Force
         Remove-Item -Path $CurrentDP.FullName -Recurse -Force
         Remove-Item -Path $CurrentHPIA.FullName -Recurse -Force
+        Write-Host "No changes to CM Package for $($PackageInfo.Name)" -ForegroundColor Yellow
         }
 
-    else #Download & Extract
+    else #Updates Needed to Package
         {
         #Temporary Place to download the softpaq EXE
         $CapturePath = "$HPStaging\HPCustomDriverPack"
@@ -205,20 +208,22 @@ foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
         Write-Host " Finished Expand & WIM Process, WIM size: $DriverWIMSize vs Expaneded: $DriverExtractSize" -ForegroundColor Green
         Write-Host " WIM Savings: $($DriverExtractSize - $DriverWIMSize) MB | $(100 - $([MATH]::Round($($DriverWIMSize / $DriverExtractSize)*100))) %" -ForegroundColor Green
 
-        #Remove-Item -Path $CapturePath -Force -Recurse
+        Write-Host "  Confirming Package Info in ConfigMgr $($PackageInfo.Name) ID: $($Model.PackageID)" -ForegroundColor yellow
+        Import-Module (Join-Path $(Split-Path $env:SMS_ADMIN_UI_PATH) ConfigurationManager.psd1)
+        Set-Location -Path "$($SiteCode):"         
+        Set-CMPackage -Id $Model.PackageID -Version $date
+        Set-CMPackage -Id $Model.PackageID -MIFVersion ""
+        Set-CMPackage -Id $Model.PackageID -Description "Updated Offline & Online Drivers on $Date"
+        $PackageInfo = Get-CMPackage -Id $Model.PackageID -Fast
+        Update-CMDistributionPoint -PackageId $Model.PackageID
+        Set-Location -Path $env:TEMP
+        Write-Host "Updated Package $($PackageInfo.Name), ID $($Model.PackageID)" -ForegroundColor Gray
         }
    
-    Write-Host "  Confirming Package Info in ConfigMgr $($PackageInfo.Name) ID: $($Model.PackageID)" -ForegroundColor yellow
-    Import-Module (Join-Path $(Split-Path $env:SMS_ADMIN_UI_PATH) ConfigurationManager.psd1)
-    Set-Location -Path "$($SiteCode):"         
-    Set-CMPackage -Id $Model.PackageID -Version $date
-    Set-CMPackage -Id $Model.PackageID -MIFVersion ""
-    Set-CMPackage -Id $Model.PackageID -Description "Updated Offline & Online Drivers on $Date"
-    $PackageInfo = Get-CMPackage -Id $Model.PackageID -Fast
-    Update-CMDistributionPoint -PackageId $Model.PackageID
-    Set-Location -Path "C:"
-    Write-Host "Updated Package $($PackageInfo.Name), ID $($Model.PackageID) to $($DriverInfo.Id) which was released $($DriverInfo.ReleaseDate)" -ForegroundColor Gray
-     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
+
+
+    
+    Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
 #>
     }  
 
