@@ -1,5 +1,4 @@
 <#
-    
     Script to create a DriverPack
     by Dan Felman/HP - 2/18/2022
     Version 
@@ -13,9 +12,10 @@
         (1.02.01 Added -TestOnly switch to avoid creating driverpack, added versions to final list output )
         (1.02.02 Added (-OutFormat) ability to craete WIM file, not just ZIP )
 
-    Gary Blok (@gwblok) Recast Software Edits
+        Gary Blok (@gwblok) Recast Software Edits
         22.02.27 - Added "None" as option for output file, when I really just want the folder structure created to be moved into my own processes
         22.02.27 - changed date scheme from MMM.dd.yyyy to yyyy.MM.dd for easier scripting 
+
 
     NOTE: Existing downloaded drivers are NOT removed... must be cleared out if no longer needed
     NOTE: creation of WIM output requires Local Administrator rights (not so for ZIP)
@@ -32,7 +32,7 @@
     [-Unselectlist 'amd','nvidia','displaylink','wwan','USB-C Dock','sp122447'] 
     [-RemoveOlder]                                       # avoid inclusion of superseded softpaqs
     [-TestOnly]                                          # shows all work, but does not create driverpack
-    [-OutFormat 'wim'|'zip']                             # defaults to ZIP # not useful with -TestOnly
+    [-OutFormat 'wim'|'zip'|'None']                             # defaults to ZIP # not useful with -TestOnly
 
     Usage: 
     with named parameters:
@@ -66,7 +66,7 @@ param(
     [switch]$RemoveOlder=$false,                  # set default to not remove superseded Softpaqs
     [Parameter( Mandatory = $false, Position = 7 )]
     [switch]$TestOnly=$false,
-    [Parameter( Mandatory = $false, Position = 8 )] [ValidateSet('zip', 'wim')]
+    [Parameter( Mandatory = $false, Position = 8 )] [ValidateSet('zip', 'wim', 'none')]
     [string]$OutFormat='wim'
 ) # param
 
@@ -140,6 +140,9 @@ Function New_HPDriverPack {
             New-WindowsImage -CapturePath $pExtractPath -ImagePath $pExtractPath'.wim' -CompressionType Max `
                 -LogPath $pExtractPath'\DISM.log' -Name (Split-Path $pDownloadPath -leaf)
             '== created driverpack '+$pExtractPath+'.wim' | Out-Host
+            }
+        'none' {             
+            '== Skipped creating output file' | Out-Host
             }
     } # switch ( $pOutputFormat )
 
@@ -313,9 +316,9 @@ if ( $TestOnly ) {
 } else {
     "{Creating driverpack}" | Out-Host
     $DriverPackHdr = "$($Platform)_$($OS)_$($OSVer)"
-    $softpaqDownloadRoot = "$($DownloadPath)\$($DriverPackHdr)."+(Get-Date -Format "MMMddyyyy")
+    $softpaqDownloadRoot = "$($DownloadPath)\$($DriverPackHdr)."+(Get-Date -Format "yyyyMMdd")
 
-    $driverPackRoot = "$($DownloadPath)\DriverPack\$($DriverPackHdr)."+(Get-Date -Format "MMMddyyyy")
+    $driverPackRoot = "$($DownloadPath)\DriverPack\$($DriverPackHdr)."+(Get-Date -Format "yyyyMMdd")
     '== Download and Extract Path: '+$softpaqDownloadRoot
     '== DriverPack to be found at: '+$driverPackRoot
 
@@ -323,7 +326,7 @@ if ( $TestOnly ) {
     # make sure the root download path exists
     #
     if ( -not (Test-Path $softpaqDownloadRoot) ) {
-        New-Item -Path $softpaqDownloadRoot -ItemType directory
+        New-Item -Path $softpaqDownloadRoot -ItemType directory | out-null
     }
     Set-Location $softpaqDownloadRoot
     New_HPDriverPack $DPBList $softpaqDownloadRoot $driverPackRoot $OutFormat
