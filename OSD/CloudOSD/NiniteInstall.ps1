@@ -1,4 +1,4 @@
-﻿#Ninite Installer Script
+#Ninite Installer Script
 #Downloads Ninite Installer based on Input
 #Currently Supports a few different apps, feel free to add others
 #Supports Install & Uninstall
