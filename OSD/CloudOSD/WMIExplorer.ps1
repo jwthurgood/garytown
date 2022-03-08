@@ -1,6 +1,4 @@
-﻿
-
-<#Sysinternals Suite Installer
+﻿<#WMI Explorer
 Gary Blok @gwblok Recast Software
 
 Used with OSDCloud Edition OSD
