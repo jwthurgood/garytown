@@ -1,4 +1,4 @@
-﻿<#Sysinternals Suite Installer
+<#Sysinternals Suite Installer
 Gary Blok @gwblok Recast Software
 
 Used with OSDCloud Edition OSD
@@ -149,7 +149,17 @@ foreach ($App in $Sysinternals)#{}
 
 #Add ProgramFiles\SysInternalsSuite to Path
 
-#Get Current Path$Environment = [System.Environment]::GetEnvironmentVariable("Path", "Machine")$newpath = $Environment.Split(";")if (!($newpath -contains "$InstallPath")){            CMTraceLog -Message  "Adding $InstallPath to Path Variable" -Type 1 -LogFile $LogFile            [System.Collections.ArrayList]$AddNewPathList = $newpath            $AddNewPathList.Add("$InstallPath")            $FinalPath = $AddNewPathList -join ";"            #Set Updated Path            [System.Environment]::SetEnvironmentVariable("Path", $FinalPath, "Machine")
+#Get Current Path
+$Environment = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+$newpath = $Environment.Split(";")
+if (!($newpath -contains "$InstallPath")){
+            CMTraceLog -Message  "Adding $InstallPath to Path Variable" -Type 1 -LogFile $LogFile
+            [System.Collections.ArrayList]$AddNewPathList = $newpath
+            $AddNewPathList.Add("$InstallPath")
+            $FinalPath = $AddNewPathList -join ";"
+
+            #Set Updated Path
+            [System.Environment]::SetEnvironmentVariable("Path", $FinalPath, "Machine")
             }
 else
     {
