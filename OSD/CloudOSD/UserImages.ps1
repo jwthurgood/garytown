@@ -7,7 +7,20 @@ Grabs User Images from GitHub Repo and replaces default ones.
 Just replace the RootURL with your own upload location
 
 #>
+
+
+try {$tsenv = new-object -comobject Microsoft.SMS.TSEnvironment}
+catch{Write-Output "Not in TS"}
+if ($tsenv){$InWinPE = $tsenv.value('_SMSTSInWinPE')}
+
+if ($InWinPE -ne "TRUE"){
 $InstallPath = "$env:ProgramData\Microsoft\User Account Pictures"
+}
+
+if ($InWinPE -eq "TRUE"){
+$InstallPath = "c:\Program Data\Microsoft\User Account Pictures"
+}
+
 $RootURL = "https://raw.githubusercontent.com/gwblok/garytown/master/OSD/CloudOSD/UserPics/"
 $Files = @(
 "guest.png"
