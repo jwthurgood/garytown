@@ -1,24 +1,10 @@
-﻿<#
-.SYNOPSIS
-    --.Replaces Wallpaper images with your own
-.DESCRIPTION
-    This script takes ownership and set persmissions on files located: c:\windows\web\4K and delete contents
-    This script will replace C:\windows\web\Wallpaper\Windows\img0.jpg with .\Wallpaper.jpg
-    Designed to work in Task Sequence, but would work in Application Model or Package as well.
-.INPUTS
-    None.
-.OUTPUTS
-    None.
-.NOTES
-    Created by @gwblok
-.LINK
-    https://garytown.com
-.LINK
-    https://www.recastsoftware.com
-.COMPONENT
-    --
-.FUNCTIONALITY
-    --
+﻿<# Set WallPaper
+Gary Blok @gwblok Recast Software
+
+Used with OSDCloud Edition OSD
+
+Replaces Default Windows WallPaper with your own
+
 #>
 
 ## Set script requirements

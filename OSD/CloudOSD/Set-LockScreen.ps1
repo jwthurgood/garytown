@@ -1,24 +1,10 @@
-﻿<#
-.SYNOPSIS
-    --.Replaces Lock Screen images with your own
-.DESCRIPTION
-    This script takes ownership and set persmissions on files located: c:\windows\web\screen
-    This script will replace C:\windows\web\Screen\img100.jpg &  C:\windows\web\Screen\img105.jpg with .\lockscreen.jpg
-    Designed to work in Task Sequence, but would work in Application Model or Package as well.
-.INPUTS
-    None.
-.OUTPUTS
-    None.
-.NOTES
-    Created by @gwblok
-.LINK
-    https://garytown.com
-.LINK
-    https://www.recastsoftware.com
-.COMPONENT
-    --
-.FUNCTIONALITY
-    --
+﻿<# Set Lock Screen
+Gary Blok @gwblok Recast Software
+
+Used with OSDCloud Edition OSD
+
+Replaces Default Windows Lock Screen with your own
+
 #>
 
 ## Set script requirements
