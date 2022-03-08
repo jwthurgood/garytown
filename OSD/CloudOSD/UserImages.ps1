@@ -1,4 +1,4 @@
-﻿<# Default Windows User Profile Images
+<# Default Windows User Profile Images
 Gary Blok @gwblok Recast Software
 
 Used with OSDCloud Edition OSD
