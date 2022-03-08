@@ -7,25 +7,8 @@ Replaces Default Windows WallPaper with your own
 
 #>
 
-## Set script requirements
-#Requires -Version 3.0
-
-##*=============================================
-##* VARIABLE DECLARATION
-##*=============================================
-#region VariableDeclaration
 
 $ScriptVersion = "22.3.8.1"
-
-#endregion
-##*=============================================
-##* END VARIABLE DECLARATION
-##*=============================================
-
-##*=============================================
-##* FUNCTION LISTINGS
-##*=============================================
-#region FunctionListings
 
 function enable-privilege {
  param(
@@ -145,18 +128,8 @@ $NewAcl.SetAccessRule($FilesSystemAccessRule)
 Set-Acl -Path $file.FullName -AclObject $NewAcl
 }
 
-#endregion
-##*=============================================
-##* END FUNCTION LISTINGS
-##*=============================================
-
-##*=============================================
-##* SCRIPT BODY
-##*=============================================
-#region ScriptBody
 
 $files = Get-ChildItem -Path C:\Windows\Web\4K -Recurse | where-object {$_.Extension -eq ".jpg"}
-
 
 try {$tsenv = new-object -comobject Microsoft.SMS.TSEnvironment}
 catch{Write-Output "Not in TS"}
@@ -207,9 +180,7 @@ foreach ($filechild in $files)
 
 #Download WallPaper from GitHub
 $WallPaperURL = "https://github.com/gwblok/garytown/raw/master/OSD/CloudOSD/wallpaper.jpg"
-#$LockScreenURL = "https://github.com/gwblok/garytown/raw/master/OSD/CloudOSD/lockscreen.jpg"
 Invoke-WebRequest -UseBasicParsing -Uri $WallPaperURL -OutFile "$env:TEMP\wallpaper.jpg"
-#Invoke-WebRequest -UseBasicParsing -Uri $LockScreenURL -OutFile "$env:TEMP\lockscreen.jpg"
 
 #Copy the 2 files into place
 if (Test-Path -Path "$env:TEMP\wallpaper.jpg"){
@@ -223,7 +194,3 @@ else
 
 
 exit $exitcode
-#endregion
-##*=============================================
-##* END SCRIPT BODY
-##*=============================================
