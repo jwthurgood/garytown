@@ -1,10 +1,9 @@
-﻿<# Set Lock Screen
+<# Set Lock Screen
 Gary Blok @gwblok Recast Software
 
 Used with OSDCloud Edition OSD
 
 Replaces Default Windows Lock Screen with your own
-
 #>
 
 
