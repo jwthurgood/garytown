@@ -62,7 +62,7 @@ function CMTraceLog {
 	    $LogMessage.Replace("`0","") | Out-File -Append -Encoding UTF8 -FilePath $LogFile
     }
 
-if (!(Test-Path -Path $logpath)){$Null = New-Item -Path $logpath -ItemType Directory -Force}
+if (!(Test-Path -Path $LogFilePath)){$Null = New-Item -Path $LogFilePath -ItemType Directory -Force}
 
 CMTraceLog -Message  "Running Script: $ScriptName | Version: $ScriptVersion" -Type 1 -LogFile $LogFile
 
