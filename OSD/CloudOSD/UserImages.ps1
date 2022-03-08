@@ -18,7 +18,7 @@ $InstallPath = "$env:ProgramData\Microsoft\User Account Pictures"
 }
 
 if ($InWinPE -eq "TRUE"){
-$InstallPath = "c:\Program Data\Microsoft\User Account Pictures"
+$InstallPath = "c:\ProgramData\Microsoft\User Account Pictures"
 }
 
 $RootURL = "https://raw.githubusercontent.com/gwblok/garytown/master/OSD/CloudOSD/UserPics/"
