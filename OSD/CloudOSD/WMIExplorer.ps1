@@ -1,4 +1,4 @@
-﻿<#WMI Explorer
+<#WMI Explorer
 Gary Blok @gwblok Recast Software
 
 Used with OSDCloud Edition OSD
@@ -7,7 +7,6 @@ Downloads the WMIExplorer Suite directly from GitHub
 
 Creates shortcut in Start Menu for the items in $Shortcuts Variable
 Shortcut Variable based on $_.VersionInfo.InternalName of the exe file for the one you want a shortcut of.
-
 
 #>
 
