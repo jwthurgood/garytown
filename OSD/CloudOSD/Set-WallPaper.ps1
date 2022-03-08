@@ -1,4 +1,4 @@
-﻿<# Set WallPaper
+<# Set WallPaper
 Gary Blok @gwblok Recast Software
 
 Used with OSDCloud Edition OSD
