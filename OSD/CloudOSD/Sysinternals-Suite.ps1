@@ -72,25 +72,12 @@ if (!(Test-Path -Path $logpath)){$Null = New-Item -Path $logpath -ItemType Direc
 
 CMTraceLog -Message  "Running Script: $ScriptName | Version: $ScriptVersion" -Type 1 -LogFile $LogFile
 
-#If Sysinternal Suite was never installed... skip checking previous version and install right to program files.
-if (!(Test-Path $InstallPath)){$Compliant = $false}
-
 $URL = "https://download.sysinternals.com/files/$FileName"
 $DownloadTempFile = "$env:TEMP\$FileName"
-if (Test-Path -Path $DownloadTempFile){
-    $ZipFile = get-item $DownloadTempFile
-    if (!($ZipFile.LastAccessTime -gt ((Get-Date).AddDays(-14))))
-        {
-        CMTraceLog -Message  "Downloading $URL to $DownloadTempFile" -Type 1 -LogFile $LogFile
-        #Invoke-WebRequest -UseBasicParsing -Uri $URL -OutFile $DownloadTempFile
-        $Download = Start-BitsTransfer -Source $URL -Destination $DownloadTempFile -DisplayName $FileName
-        }
-    }
-else
-    {
-    CMTraceLog -Message  "Downloading $URL to $DownloadTempFile" -Type 1 -LogFile $LogFile
-    $Download = Start-BitsTransfer -Source $URL -Destination $DownloadTempFile -DisplayName $FileName
-    }
+
+CMTraceLog -Message  "Downloading $URL to $DownloadTempFile" -Type 1 -LogFile $LogFile
+$Download = Start-BitsTransfer -Source $URL -Destination $DownloadTempFile -DisplayName $FileName
+
 
 
 #Write-Output "Downloaded Version Newer than Installed Version, overwriting Installed Version"
