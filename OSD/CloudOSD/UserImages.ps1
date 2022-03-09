@@ -28,11 +28,19 @@ Write-Output "Running in WinPE"
 $InstallPath = "c:\ProgramData\Microsoft\User Account Pictures"
 #Mount Registry & Add Required Registry Value
 Write-Output "Mounting Offline Registry"
-start-process -FilePath cmd.exe -ArgumentList "/c reg load HKLM\Offline c:\windows\system32\config\software"
+start-process -FilePath reg.exe -ArgumentList "load HKLM\Offline c:\windows\system32\config\software"
 Write-Output "Adding Required Resistry Value"
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "UseDefaultTile" -PropertyType DWORD -Value 1 -Force -Verbose
+Start-Sleep -s 2
 Write-Output "Dismounting Registry"
-start-process -FilePath cmd.exe -ArgumentList "/c reg unload HKLM\Offline"
+[gc]::Collect()
+start-process -FilePath reg.exe -ArgumentList "unload HKLM\Offline"
+if (Test-Path -Path "HKLM:\Offline"){
+    Start-Sleep -Seconds 2
+    start-process -FilePath reg.exe -ArgumentList "unload HKLM\Offline" -Verbose
+
+    }
+
 }
 
 $RootURL = "https://raw.githubusercontent.com/gwblok/garytown/master/OSD/CloudOSD/UserPics/"
