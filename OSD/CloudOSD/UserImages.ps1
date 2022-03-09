@@ -32,6 +32,10 @@ $Files = @(
 "user.png"
 )
 
+#Clear Folder Contents
+Get-ChildItem -Path $InstallPath | Remove-Item -Force
+
+#Replace Contents with my Contents
 foreach ($File in $Files){
     Write-Output "Downloading $RootURL/$File"
     Invoke-WebRequest -UseBasicParsing -Uri "$RootURL/$File" -OutFile "$env:TEMP\$File"
