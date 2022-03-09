@@ -32,8 +32,6 @@ $Files = @(
 "user.png"
 )
 
-#Clear Folder Contents
-Get-ChildItem -Path $InstallPath | Remove-Item -Force
 
 #Replace Contents with my Contents
 foreach ($File in $Files){
@@ -42,3 +40,6 @@ foreach ($File in $Files){
     Write-Output "Running Command: Copy-Item $($env:TEMP)\$File $InstallPath\$file -Force -Verbose"
     Copy-Item "$env:TEMP\$file" -Destination "$InstallPath\$file" -Force -Verbose
     }
+
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "UseDefaultTile" -PropertyType DWORD -Value 1 -Force -Verbose
+
