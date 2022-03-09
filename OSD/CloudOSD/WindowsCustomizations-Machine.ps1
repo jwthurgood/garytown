@@ -22,8 +22,10 @@ $DisableCortana = $True
 $PreventFirstRunPage = $True
 $AllowClipboardHistory = $True
 $DisableConsumerFeatures = $True
+$ShowRunasDifferentuserinStart = $True
 $EnableRDP = $True
 $PSTranscriptionMode = "Enable"
+
 
 
 
@@ -207,4 +209,13 @@ if ($EnableRDP -eq $True){
     if (!(Test-Path -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server")){New-Item -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server"}
     Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0 -Verbose
     Enable-NetFirewallRule -DisplayGroup "Remote Desktop" -Verbose
+    }
+
+
+#Show Runas Different user in Start Menu
+if ($ShowRunasDifferentuserinStart -eq $True){
+    Write-Output "Show Runas Different user in Start Menu"
+    CMTraceLog -Message  "Show Runas Different user in Start Menu" -Type 1 -LogFile $LogFile
+    if (!(Test-Path -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer")){New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer"}
+    New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "ShowRunasDifferentuserinStart" -PropertyType DWORD -Value 1 -Force -Verbose
     }
