@@ -19,13 +19,13 @@ $Null = New-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\SMS\Mobile Clien
 $Null = New-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\SMS\Mobile Client\Reboot Management\RebootData' -Name 'PreferredRebootWindowTypes' -Value @("4") -PropertyType MultiString -Force -ea SilentlyContinue;
 $Null = New-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\SMS\Mobile Client\Reboot Management\RebootData' -Name 'GraceSeconds' -Value 0 -PropertyType DWord -Force -ea SilentlyContinue;
 
-$BLStatus = (Get-BitLockerVolume -ErrorAction SilentlyContinue).ProtectionStatus
+$BLStatus = (Get-BitLockerVolume -ErrorAction SilentlyContinue).ProtectionStatus | Out-Null
 if ($BLStatus -eq "On"){
-    $MountPoint = (Get-BitLockerVolume).MountPoint
-    Suspend-BitLocker -MountPoint $MountPoint -RebootCount 1
+    $MountPoint = (Get-BitLockerVolume).MountPoint  | Out-Null
+    $Suspend = Suspend-BitLocker -MountPoint $MountPoint -RebootCount 1  | Out-Null
     }
 
-start-process -FilePath C:\windows\ccm\CcmRestart.exe -NoNewWindow -PassThru
+$CCMRestart = start-process -FilePath C:\windows\ccm\CcmRestart.exe -NoNewWindow -PassThru
 } 
 
 
@@ -39,7 +39,7 @@ if ($Manufacturer -match "H")
 
         if ($BIOSVersion -lt $LatestHPBIOSVersion)
             {
-            Write-Host "$Model Update $BIOSVersion to $LatestHPBIOSVersion" -ForegroundColor Yellow
+            Write-Host "$ComputerModel Update $BIOSVersion to $LatestHPBIOSVersion" -ForegroundColor Yellow
             $BIOSPassSet = Get-HPBIOSSetupPasswordIsSet
                 if ($BIOSPassSet)
                     {
