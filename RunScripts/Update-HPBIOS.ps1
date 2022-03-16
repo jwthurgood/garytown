@@ -43,17 +43,17 @@ if ($Manufacturer -match "H")
             $BIOSPassSet = Get-HPBIOSSetupPasswordIsSet
                 if ($BIOSPassSet)
                     {
-                    #$Process = Get-HPBIOSUpdates -Flash -Quiet -YES -Password 'Pass0001'
+                    $Process = Get-HPBIOSUpdates -Flash -Quiet -YES -Password 'Passw0rd'
                     }
                 else
                     {
-                    #$Process = Get-HPBIOSUpdates -Flash -Quiet -YES
+                    $Process = Get-HPBIOSUpdates -Flash -Quiet -YES
                     }
             Restart-ByPassComputerCM
             }
         else
             {
-            Write-Host "Already Current: $BIOSVersion" -ForegroundColor Green
+            Write-Host "$ComputerModel Already Current: $BIOSVersion" -ForegroundColor Green
            }
         
         }
