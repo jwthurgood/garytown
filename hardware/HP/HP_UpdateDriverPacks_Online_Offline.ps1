@@ -48,9 +48,11 @@
 $SiteCode = "MEM"
 $ScatchLocation = "E:\DedupExclude"
 $HPStaging = "E:\HPStaging"
+$ManifestFolderPath = "$HPStaging\Manifests"
 $HPRepoStaging = "$HPStaging\HPRepoStaging"
 $DismScratchPath = "$ScatchLocation\DISM"
 $Date = (Get-Date -Format "yyyyMMdd")
+$scriptName = "HP Driver Pack Creation"
 
 #Reset Vars
 $Driver = ""
@@ -72,6 +74,7 @@ $HPModelsTable = Get-CMPackage -Fast -Name "Driver*" | Where-Object {$_.PackageI
 
 Set-Location -Path "$env:TEMP"
 Write-Output "Starting Script: $scriptName"
+if (!(test-path -path $ManifestFolderPath)){New-Item -Path $ManifestFolderPath -ItemType Directory | Out-Null}
 
 
 
@@ -93,8 +96,8 @@ foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
         } 
 
     #Create the Driver Package (INF Files / Offline) - uses New-HPDriverPack Script
-    Write-Host "Starting script New-HPDriverPack -platform $PlatformName -OS $OS -OSVer $MaxBuild -DownloadPath $HPStaging" -ForegroundColor Green
-    & '\\src\SRC$\Scripts\New-HPDriverPack.ps1' -platform $PlatformName -OS $OS -OSVer $MaxBuild -DownloadPath "$HPStaging" -OutFormat None
+    Write-Host "Starting script New-HPDriverPack -platform $PlatformName -OS $OS -OSVer $MaxBuild -DownloadPath $HPStaging -LogOnly " -ForegroundColor Green
+    & '\\src\SRC$\Scripts\New-HPDriverPack.ps1' -platform $PlatformName -OS $OS -OSVer $MaxBuild -DownloadPath "$HPStaging" -LogOnly  # -ManifestPath "$($ManifestFolderPath)\$($PlatformName)-$($Date).json"
 
     #Create HPIA Repo & Sync for this Platform (EXE / Online)
     Write-Host "Starting HPCMSL to create HPIA Repo for $platformName" -ForegroundColor Green
@@ -181,6 +184,10 @@ foreach ($Model in $HPModelsTable) #{Write-Host "$($Model.Name)"}
         New-Item -Path "$CapturePath\Offline" -ItemType Directory | Out-Null
         New-Item -Path "$CapturePath\Online" -ItemType Directory | Out-Null
         
+        #Copy Manifest
+        $ManifestFile = Get-ChildItem -Path "$HPStaging\DriverPack" -Filter *.json | Where-Object {$_.name -match $PlatformCode -and  $_.Name -match $Date}
+        Copy-Item -Path $ManifestFile -Destination $CapturePath
+
         #Copy Offline Driver Pack Files    
         Copy-Item -Path $CurrentDP.FullName -Destination "$CapturePath\Offline" -Recurse
         
