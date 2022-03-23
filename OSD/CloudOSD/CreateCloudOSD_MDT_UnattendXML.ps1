@@ -124,7 +124,29 @@ $tsenv.value('OSDTargetSystemPartition') = "0-3" #Assume Disk 0, 3rd Partition, 
 					<Value>QQBkAG0AaQBuAGkAcwB0AHIAYQB0AG8AcgBQAGEAcwBzAHcAbwByAGQAAAA=</Value>
 					<PlainText>false</PlainText>
 				</AdministratorPassword>
-			</UserAccounts>
+               <LocalAccounts>
+                  <LocalAccount wcm:action="add">
+                     <Password>
+                        <Value>P@ssw0rd</Value>
+                        <PlainText>true</PlainText>
+                     </Password>
+                     <Description>Test account</Description>
+                     <DisplayName>Admin/Power User Account</DisplayName>
+                     <Group>Administrators;Power Users</Group>
+                     <Name>Test1</Name>
+                  </LocalAccount>
+                  <LocalAccount wcm:action="add">
+                     <Password>
+                        <Value>cABhAHMAcwB3AG8AcgBkAFAAYQBzAHMAdwBvAHIAZAA=</Value>
+                        <PlainText>false</PlainText>
+                     </Password>
+                     <Description>For testing</Description>
+                     <DisplayName>Admin Account</DisplayName>
+                     <Group>Administrators</Group>
+                     <Name>Test2</Name>
+                  </LocalAccount>
+               </LocalAccounts>
+            </UserAccounts>			
 			<RegisteredOwner>Owner</RegisteredOwner>
 		</component>
 		<component name="Microsoft-Windows-International-Core" language="neutral" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
