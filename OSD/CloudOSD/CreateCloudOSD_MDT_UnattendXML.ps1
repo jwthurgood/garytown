@@ -112,8 +112,6 @@ if ($tsenv.value('OSDComputerName') -ne $Null){
     Write-CMTraceLog -Message "Creating Computer Name to inject into XML" -Type 1 
     $ComputerName = $tsenv.value('OSDComputerName')}
     
-$DeploymentShare = $tsenv.value('DeploymentShare')
-#mdt.dev.recastsoftware.dev\deploymentshare$
 }
 
 
