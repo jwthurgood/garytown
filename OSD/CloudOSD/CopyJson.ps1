@@ -13,7 +13,7 @@ $OSDisk = $tsenv.value("osdisk")
 $JSONURL = "https://github.com/gwblok/garytown/raw/master/OSD/CloudOSD/Pilot.json"
 Invoke-WebRequest -UseBasicParsing -Uri $JSONURL -OutFile "$env:TEMP\Pilot.json"
 
-#Copy the 2 files into place
+#Copy the JOSN file into place
 if (Test-Path -Path "$env:TEMP\Pilot.json"){
     Write-Output "Running Command: Copy-Item .\Pilot.json $OSDisk\Windows\Provisioning\Autopilot\AutopilotConfigurationFile.json -Force -Verbose"
     Copy-Item "$env:TEMP\Pilot.json" "$OSDisk\Windows\Provisioning\Autopilot\AutopilotConfigurationFile.json" -Force -Verbose
