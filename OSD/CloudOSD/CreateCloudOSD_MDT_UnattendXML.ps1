@@ -132,13 +132,6 @@ $ComputerName = $OSDComputerName
 						<DiskID>0</DiskID>
 						<PartitionID>2</PartitionID>
 					</InstallTo>
-					<InstallFrom>
-						<Path>\\$DeploymentShare\Operating Systems\Windows 10 Enterprise x64\sources\install.wim</Path>
-						<MetaData>
-							<Key>/IMAGE/INDEX</Key>
-							<Value>1</Value>
-						</MetaData>
-					</InstallFrom>
 				</OSImage>
 			</ImageInstall>
 			<ComplianceCheck>
