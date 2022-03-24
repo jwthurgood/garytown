@@ -20,7 +20,7 @@ if (Test-Path -Path "$env:TEMP\CMTrace.exe"){
     }
 else
     {
-    Write-Output "Did not find wallpaper.jpg in temp folder - Please confirm URL"
+    Write-Output "Did not find CMTrace.exe in temp folder - Please confirm URL"
     }
 
 
