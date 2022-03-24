@@ -73,27 +73,23 @@ Write-CMTraceLog -Message "Running MDT 2nd Phase - Resealing" -Type 1
 		<component name="Microsoft-Windows-International-Core" language="neutral" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 			<SystemLocale>en-US</SystemLocale>
 		</component>
-		<component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	</settings><settings xmlns="urn:schemas-microsoft-com:unattend" pass="specialize"><component name="Microsoft-Windows-Deployment" language="neutral" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 			<RunSynchronous>
-				<RunSynchronousCommand wcm:action="add">
+				<RunSynchronousCommand><Order>1</Order>
 					<Description>Remove TS Folder</Description>
-					<Order>1</Order>
-					<Path>cmd /c rd c:\_SMSTaskSequence /S /Q</Path>
+					<Path>cmd.exe /c rd c:\_SMSTaskSequence /S /Q</Path>
 				</RunSynchronousCommand>
-				<RunSynchronousCommand wcm:action="add">
+				<RunSynchronousCommand><Order>2</Order>
 					<Description>Remove MININT</Description>
-					<Order>2</Order>
-					<Path>cmd /c rd c:\MININT /S /Q</Path>
+					<Path>cmd.exe /c rd c:\MININT /S /Q</Path>
 				</RunSynchronousCommand>
-				<RunSynchronousCommand wcm:action="add">
+				<RunSynchronousCommand><Order>3</Order>
 					<Description>Remove Drivers Folder</Description>
-					<Order>3</Order>
-					<Path>cmd /c rd c:\Drivers /S /Q</Path>
+					<Path>cmd.exe /c rd c:\Drivers /S /Q</Path>
 				</RunSynchronousCommand>
 			</RunSynchronous>
 		</component>
-    </settings>
-</unattend>
+	</settings></unattend>
 "@
 
 
