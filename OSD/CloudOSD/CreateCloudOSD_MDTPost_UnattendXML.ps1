@@ -87,7 +87,11 @@ Write-CMTraceLog -Message "Running MDT 2nd Phase - Resealing" -Type 1
 					<Description>Remove Drivers Folder</Description>
 					<Path>cmd.exe /c rd c:\Drivers /S /Q</Path>
 				</RunSynchronousCommand>
-			</RunSynchronous>
+				<RunSynchronousCommand><Order>4</Order>
+					<Description>Remove Drivers Folder</Description>
+					<Path>>cmd /c reg add HKLM\SOFTWARE\RecastSoftwareIT /v OSDCloud /t REG_DWORD /d 1 /f</Path>
+				</RunSynchronousCommand>
+            </RunSynchronous>
 		</component>
 	</settings></unattend>
 "@
