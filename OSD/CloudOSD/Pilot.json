@@ -1,15 +1,15 @@
 {
     "CloudAssignedDomainJoinMethod":  0,
-    "CloudAssignedDeviceName":  "Recast-%RAND:5%",
+    "CloudAssignedDeviceName":  "WRK-%RAND:5%",
     "CloudAssignedAutopilotUpdateTimeout":  1800000,
     "CloudAssignedForcedEnrollment":  1,
     "Version":  2049,
-    "CloudAssignedTenantId":  "f0f531dc-d350-4bc5-9e7e-e219e4bb351b",
+    "CloudAssignedTenantId":  "FF0CF71B-85D3-4891-8D60-E7F9FD08683F",
     "CloudAssignedAutopilotUpdateDisabled":  1,
     "ZtdCorrelationId":  "4337dddf-b2c2-46d5-a377-2db4d4d426a4",
-    "Comment_File":  "Profile Recast Software Auto Pilot Profile",
-    "CloudAssignedAadServerData":  "{\"ZeroTouchConfig\":{\"CloudAssignedTenantUpn\":\"\",\"ForcedEnrollment\":1,\"CloudAssignedTenantDomain\":\"recastsoftwareblog.onmicrosoft.com\"}}",
+    "Comment_File":  "Profile DWT Auto Pilot Profile",
+    "CloudAssignedAadServerData":  "{\"ZeroTouchConfig\":{\"CloudAssignedTenantUpn\":\"\",\"ForcedEnrollment\":1,\"CloudAssignedTenantDomain\":\"dwt.onmicrosoft.com\"}}",
     "CloudAssignedOobeConfig":  1310,
-    "CloudAssignedTenantDomain":  "recastsoftwareblog.onmicrosoft.com",
+    "CloudAssignedTenantDomain":  "dwt.onmicrosoft.com",
     "CloudAssignedLanguage":  "os-default"
 }
