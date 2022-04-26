@@ -10,7 +10,7 @@ $OSDisk = $tsenv.value("osdisk")
 
 
 #Download WallPaper from GitHub
-$JSONURL = "https://github.com/gwblok/garytown/raw/master/OSD/CloudOSD/Pilot.json"
+$JSONURL = "https://raw.githubusercontent.com/jwthurgood/garytown/master/OSD/CloudOSD/Pilot.json"
 Invoke-WebRequest -UseBasicParsing -Uri $JSONURL -OutFile "$env:TEMP\Pilot.json"
 
 #Copy the JOSN file into place
