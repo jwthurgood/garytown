@@ -43,7 +43,7 @@ if (Test-Path -Path "HKLM:\Offline"){
 
 }
 
-$RootURL = "https://raw.githubusercontent.com/gwblok/garytown/master/OSD/CloudOSD/UserPics/"
+$RootURL = "https://raw.githubusercontent.com/jwthurgood/garytown/master/OSD/CloudOSD/UserPics/"
 $Files = @(
 "guest.png"
 "user-192.png"
