@@ -4,7 +4,7 @@ Used with OSDCloud Edition OSD
 #>
 
 #Download WallPaper from GitHub
-$CMTraceURL = "https://github.com/gwblok/garytown/raw/master/OSD/CloudOSD/CMTrace.exe"
+$CMTraceURL = "https://github.com/jwthurgood/garytown/raw/master/OSD/CloudOSD/CMTrace.exe"
 Invoke-WebRequest -UseBasicParsing -Uri $CMTraceURL -OutFile "$env:TEMP\CMTrace.exe"
 
 #Copy the CMTrace into place
