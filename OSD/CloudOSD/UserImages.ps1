@@ -52,6 +52,8 @@ $Files = @(
 "user-40.png"
 "user-48.png"
 "user.png"
+"user.bmp"
+"guest.bmp"
 )
 
 
