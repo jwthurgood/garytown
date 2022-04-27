@@ -22,7 +22,7 @@ if ($tsenv){
     $LogFolder = $tsenv.value('CompanyFolder')#Company Folder is set during the TS Var at start of TS.
     $CompanyName = $tsenv.value('CompanyName')
     }
-if (!($CompanyName)){$CompanyName = "RecastSoftwareIT"}#If CompanyName / CompanyFolder info not found in TS Var, use this.
+if (!($CompanyName)){$CompanyName = "DWT"}#If CompanyName / CompanyFolder info not found in TS Var, use this.
 if (!($LogFolder)){$LogFolder = "$env:ProgramData\$CompanyName"}
 $LogFilePath = "$LogFolder\Logs"
 $LogFile = "$LogFilePath\Sysinternals-Suite.log"
