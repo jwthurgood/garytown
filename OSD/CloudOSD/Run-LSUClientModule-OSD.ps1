@@ -17,6 +17,22 @@
     
 #> 
 
+
+## Set the script execution policy for this process
+Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force -ErrorAction 'SilentlyContinue'
+    } Catch {}
+
+## Set the Installation Policy for PSRepository for PSGallery
+Try { Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+    } Catch {write-output "failed"}
+
+## Install the module LSUClient
+Try { Install-Module -Name LSUClient -Force
+    } Catch {write-output "failed"}
+
+        
+	
+
 $companyName = "DWT"
 $global:regKey = "HKLM:\SOFTWARE\$companyName\OSDDrivers"
 
@@ -61,16 +77,21 @@ function Get-LenovoComputerModel() {
     $lenovoVendor = (Get-CimInstance -ClassName Win32_ComputerSystemProduct).Vendor
     if ($lenovoVendor = "LENOVO") {
         Write-Verbose -Verbose "Lenovo device is detected. Continuing."
+	Write-CMTraceLog -Message "Lenovo device is detected. Continuing." -Type 1
         $global:lenovoModel = (Get-CimInstance -ClassName Win32_ComputerSystemProduct).Version
         $modelRegEx = [regex]::Match((Get-CimInstance -ClassName CIM_ComputerSystem -ErrorAction SilentlyContinue -Verbose:$false).Model, '^\w{4}')
         if ($modelRegEx.Success -eq $true) {
             $global:lenovoModelNumber = $modelRegEx.Value
             Write-Verbose -Verbose "Lenovo modelnumber: $global:lenovoModelNumber - Lenovo model: $global:lenovoModel"
+	    Write-CMTraceLog -Message "Lenovo device is detected. Continuing." -Type 1
         } else {
-            Write-Verbose -Verbose "Failed to retrieve computermodel"
+	    Write-Verbose -Verbose "Failed to retrieve computermodel"
+            Write-CMTraceLog -Message "Failed to retrieve computermodel" -Type 1
+			
         } 
     } else {
-        Write-Verbose -Verbose "Not a Lenovo device. Aborting."
+	Write-Verbose -Verbose "Not a Lenovo device. Aborting."
+        Write-CMTraceLog -Message "Not a Lenovo device. Aborting." -Type 1
         exit 1
     }  
 }
@@ -79,19 +100,24 @@ function Get-LenovoComputerModel() {
 function Load-LSUClientModule() {
     if (-NOT(Get-Module -Name LSUClient)) {
         Write-Verbose -Verbose "LSUClient module not loaded. Continuing."
+	Write-CMTraceLog -Message "LSUClient module not loaded. Continuing." -Type 1
         if (Get-Module -Name LSUClient -ListAvailable) {
             Write-Verbose -Verbose "LSUClient module found available. Try importing and loading it."
+	    Write-CMTraceLog -Message "LSUClient module found available. Try importing and loading it." -Type 1
             try {
-				Install-Module -Name LSUClient
-                Import-Module -Name LSUClient
+		Install-Module -Name LSUClient -Force
+                #Import-Module -Name LSUClient -Force
                 Write-Verbose -Verbose "Successfully installed, imported and loaded the LSUClient module."
+		Write-CMTraceLog -Message "Successfully installed, imported and loaded the LSUClient module." -Type 1
             } catch {
                 Write-Verbose -Verbose "Failed to install or import the LSUClient module. Aborting."
+		Write-CMTraceLog -Message "Failed to install or import the LSUClient module. Aborting." -Type 1
                 exit 1
             }
         }
     } else {
         Write-Verbose -Verbose "LSUClient module already installed and/or imported and loaded."
+	Write-CMTraceLog -Message "LSUClient module already installed and/or imported and loaded." -Type 1
     }
 }
 
@@ -150,7 +176,7 @@ Write-CMTraceLog -Message "Running Script as $env:USERNAME" -Type 1
 
 
 try {
-	Write-CMTraceLog -Message "Starting script to Install Lenovo Drivers and BIOS" -Type 1
+    Write-CMTraceLog -Message "Starting script to Install Lenovo Drivers and BIOS" -Type 1
     Get-LenovoComputerModel
     Load-LSUClientModule
     if ($global:lenovoModelNumber -eq "20QF") {
@@ -172,10 +198,10 @@ finally {
     New-ItemProperty -Path $regKey -Name "_RunDateTime" -Value $currentDate -Force | Out-Null
     New-ItemProperty -Path $regKey -Name "_LenovoModelNumber" -Value $global:lenovoModelNumber -Force | Out-Null
     New-ItemProperty -Path $regKey -Name "_LenovoModel" -Value $global:lenovoModel -Force | Out-Null
-	Write-Output "Ending script to Install Lenovo Drivers and BIOS"
+    Write-Output "Ending script to Install Lenovo Drivers and BIOS"
 	
     Write-CMTraceLog -Message "Ending script to Install Lenovo Drivers and BIOS" -Type 1
-	Write-CMTraceLog -Message "=====================================================" -Type 1
-	Write-CMTraceLog -Message "Registry tatooed at: $global:regKey" -Type 1
-	Write-CMTraceLog -Message "=====================================================" -Type 1
+    Write-CMTraceLog -Message "=====================================================" -Type 1
+    Write-CMTraceLog -Message "Registry tatooed at: $global:regKey" -Type 1
+    Write-CMTraceLog -Message "=====================================================" -Type 1
 }
