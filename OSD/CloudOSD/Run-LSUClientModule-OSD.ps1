@@ -29,6 +29,10 @@ Try { Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
 ## Install the module LSUClient
 Try { Install-Module -Name LSUClient -Force
     } Catch {write-output "failed"}
+    
+## Import the module LSUClient
+Try { Import-Module -Name LSUClient -Force
+    } Catch {write-output "failed"}
 
 
 	
@@ -105,19 +109,19 @@ function Load-LSUClientModule() {
             Write-Verbose -Verbose "LSUClient module found available. Try importing and loading it."
 			Write-CMTraceLog -Message "LSUClient module found available. Try importing and loading it." -Type 1
             try {
-				Install-Module -Name LSUClient -Force
-                #Import-Module -Name LSUClient -Force
+		Install-Module -Name LSUClient -Force
+                Import-Module -Name LSUClient -Force
                 Write-Verbose -Verbose "Successfully installed, imported and loaded the LSUClient module."
 				Write-CMTraceLog -Message "Successfully installed, imported and loaded the LSUClient module." -Type 1
             } catch {
                 Write-Verbose -Verbose "Failed to install or import the LSUClient module. Aborting."
-				Write-CMTraceLog -Message "Failed to install or import the LSUClient module. Aborting." -Type 1
+		Write-CMTraceLog -Message "Failed to install or import the LSUClient module. Aborting." -Type 1
                 exit 1
             }
         }
     } else {
         Write-Verbose -Verbose "LSUClient module already installed and/or imported and loaded."
-		Write-CMTraceLog -Message "LSUClient module already installed and/or imported and loaded." -Type 1
+	Write-CMTraceLog -Message "LSUClient module already installed and/or imported and loaded." -Type 1
     }
 }
 
@@ -127,8 +131,8 @@ function Run-LSUClientModuleDefault() {
     $regKey = $global:regKey
     if (-NOT(Test-Path -Path $regKey)) { New-Item -Path $regKey -Force | Out-Null }
     #$updates = Get-LSUpdate | Where-Object { $_.Installer.Unattended }
-	$updates = Get-LSUpdate |
-	Where-Object { $_.Installer.Unattended } | 
+    $updates = Get-LSUpdate |
+    Where-Object { $_.Installer.Unattended } | 
     Where-Object { $_.Type -ne 'BIOS' } |
     Where-Object { $_.Category -notmatch "BIOS|UEFI" } |
     Where-Object { $_.Title -notmatch "BIOS|UEFI" }
