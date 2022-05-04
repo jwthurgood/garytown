@@ -132,10 +132,7 @@ function Run-LSUClientModuleDefault() {
     if (-NOT(Test-Path -Path $regKey)) { New-Item -Path $regKey -Force | Out-Null }
     #$updates = Get-LSUpdate | Where-Object { $_.Installer.Unattended }
     $updates = Get-LSUpdate |
-    Where-Object { $_.Installer.Unattended } | 
-    Where-Object { $_.Type -ne 'BIOS' } |
-    Where-Object { $_.Category -notmatch "BIOS|UEFI" } |
-    Where-Object { $_.Title -notmatch "BIOS|UEFI" }
+     Where-Object { $_.Installer.Unattended -AND $_.Type -eq 'Driver' -AND $_.Title -notmatch "BIOS|UEFI|Graphics|Firmware" -AND $_.RebootType -ne 5 }
     foreach ($update in $updates) {
         Install-LSUpdate $update -Verbose
         New-ItemProperty -Path $regKey -Name $update.ID -Value $update.Title -Force | Out-Null
