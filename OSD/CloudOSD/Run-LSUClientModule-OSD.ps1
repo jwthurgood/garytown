@@ -131,7 +131,7 @@ function Run-LSUClientModuleDefault() {
 		foreach ($update in $updates) {
 			Install-LSUpdate $update -Verbose
 			New-ItemProperty -Path $regKey -Name $update.ID -Value $update.Title -Force | Out-Null
-			Write-CMTraceLog -Message "Update ID: ${update.ID}     Update Title: ${update.Title}" -Type 1
+			Write-CMTraceLog -Message "Update: $($update.ID)  |  $($update.Title)" -Type 1
 		} 
 	} else {
 		Write-Verbose -Verbose "No updates found and/or needed."
@@ -156,7 +156,7 @@ function Run-LSUClientModuleCustom() {
         foreach ($update in $updates) {
             Install-LSUpdate $update -Verbose
             New-ItemProperty -Path $regKey -Name $update.ID -Value $update.Title -Force | Out-Null
-            Write-CMTraceLog -Message "Update ID: ${update.ID}     Update Title: ${update.Title}" -Type 1
+            Write-CMTraceLog -Message "Update: $($update.ID)  |  $($update.Title)" -Type 1
 		} 
 	} else {
 		Write-Verbose -Verbose "No updates found and/or needed."
