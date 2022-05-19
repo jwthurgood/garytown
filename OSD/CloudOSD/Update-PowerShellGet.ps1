@@ -26,3 +26,7 @@ if (!(Get-Module -Name PackageManagement)){
     $Null = New-Item -Path "$env:ProgramFiles\WindowsPowerShell\Modules\PackageManagement" -ItemType Directory -ErrorAction SilentlyContinue
     Move-Item -Path "$WorkingDir\1.4.7" -Destination "$env:ProgramFiles\WindowsPowerShell\Modules\PackageManagement\1.4.7"
     }
+    
+Try {
+    Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+} Catch {}
