@@ -1,4 +1,6 @@
-﻿
+$ErrorActionPreference = "SilentlyContinue"
+
+Try {
 # Install Chocolatey
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
@@ -16,3 +18,4 @@ Set-PackageSource -Name PSGallery -Trusted -Force
 # The SystemDefaultTlsVersions setting allows .NET to use the OS configuration (which in Windows 11 is TLS 1.3 & 1.2)
 reg add HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.30319 /v SystemDefaultTlsVersions /t REG_DWORD /d 1 /f /reg:64
 reg add HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.30319 /v SystemDefaultTlsVersions /t REG_DWORD /d 1 /f /reg:32
+} Catch {}
