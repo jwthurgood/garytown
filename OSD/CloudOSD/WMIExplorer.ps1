@@ -1,41 +1,31 @@
 <#WMI Explorer
 Gary Blok @gwblok Recast Software
-
 Used with OSDCloud Edition OSD
-
 Downloads the WMIExplorer Suite directly from GitHub
-
 Creates shortcut in Start Menu for the items in $Shortcuts Variable
 Shortcut Variable based on $_.VersionInfo.InternalName of the exe file for the one you want a shortcut of.
-
 #>
 
 try {$tsenv = new-object -comobject Microsoft.SMS.TSEnvironment}
 catch{Write-Output "Not in TS"}
 
 $ScriptName = "WMIExplorer"
-
 $ScriptVersion = "22.03.07.01"
-if ($tsenv){
-    $LogFolder = $tsenv.value('CompanyFolder')#Company Folder is set during the TS Var at start of TS.
-    $CompanyName = $tsenv.value('CompanyName')
-    }
-if (!($CompanyName)){$CompanyName = "RecastSoftwareIT"}#If CompanyName / CompanyFolder info not found in TS Var, use this.
-if (!($LogFolder)){$LogFolder = "$env:ProgramData\$CompanyName"}
-$LogFilePath = "$LogFolder\Logs"
-$LogFile = "$LogFilePath\WMIExplorer.log"
+
+$LogFolder = "C:\Windows\Logs\Software"
+$LogFile = "$LogFolder\WmiExplorer_$(Get-Date -format yyyy-MM-dd-HHmm).log"
+
+# Create Log folders if they do not exist
+if (!(Test-Path -path $LogFolder)){$Null = new-item -Path $LogFolder -ItemType Directory -Force}
+
+
 
 #Download & Extract to Program Files
 $FileName = "WmiExplorer_2.0.0.2.zip"
 $InstallPath = "$env:windir\System32"
 
 
-<# From: https://www.ephingadmin.com/powershell-cmtrace-log-function/
-$LogFilePath = "$env:TEMP\Logs"
-$LogFile = "$LogFilePath\SetComputerName.log"
-CMTraceLog -Message  "Running Script: $ScriptName | Version: $ScriptVersion" -Type 1 -LogFile $LogFile
 
-#>
 function CMTraceLog {
          [CmdletBinding()]
     Param (
@@ -48,7 +38,7 @@ function CMTraceLog {
 		    [Parameter(Mandatory=$false)]
 		    [int]$Type,
 		    [Parameter(Mandatory=$true)]
-		    $LogFile = "$env:ProgramData\Logs\IForgotToName.log"
+		    $LogFile = "$LogFolder\WmiExplorer_$(Get-Date -format yyyy-MM-dd-HHmm).log"
 	    )
     <#
     Type: 1 = Normal, 2 = Warning (yellow), 3 = Error (red)
@@ -62,9 +52,15 @@ function CMTraceLog {
 	    $LogMessage.Replace("`0","") | Out-File -Append -Encoding UTF8 -FilePath $LogFile
     }
 
-if (!(Test-Path -Path $LogFilePath)){$Null = New-Item -Path $LogFilePath -ItemType Directory -Force}
 
-CMTraceLog -Message  "Running Script: $ScriptName | Version: $ScriptVersion" -Type 1 -LogFile $LogFile
+
+
+
+CMTraceLog -Message  "--------------------------------------------------------" -Type 1 -LogFile $LogFile
+CMTraceLog -Message  "Running Script: $ScriptName | Version: $ScriptVersion   " -Type 1 -LogFile $LogFile
+CMTraceLog -Message  "--------------------------------------------------------" -Type 1 -LogFile $LogFile
+
+
 
 $URL = "https://github.com/vinaypamnani/wmie2/releases/download/v2.0.0.2/$FileName"
 $DownloadTempFile = "$env:TEMP\$FileName"
@@ -94,4 +90,6 @@ $Shortcut.Arguments = $ArgumentsToSourceExe
 $Shortcut.Save()
                     
 
+CMTraceLog -Message  "--------------------------------------------------------" -Type 1 -LogFile $LogFile
+CMTraceLog -Message  "                       Finished                         " -Type 1 -LogFile $LogFile
 CMTraceLog -Message  "--------------------------------------------------------" -Type 1 -LogFile $LogFile
