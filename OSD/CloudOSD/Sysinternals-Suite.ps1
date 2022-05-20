@@ -12,20 +12,15 @@ Shortcut Variable based on $_.VersionInfo.InternalName of the exe file for the o
 
 #>
 
-try {$tsenv = new-object -comobject Microsoft.SMS.TSEnvironment}
-catch{Write-Output "Not in TS"}
+
 
 $ScriptName = "Sysinternals-Suite"
-
 $ScriptVersion = "22.03.07.01"
-if ($tsenv){
-    $LogFolder = $tsenv.value('CompanyFolder')#Company Folder is set during the TS Var at start of TS.
-    $CompanyName = $tsenv.value('CompanyName')
-    }
-if (!($CompanyName)){$CompanyName = "DWT"}#If CompanyName / CompanyFolder info not found in TS Var, use this.
-if (!($LogFolder)){$LogFolder = "$env:ProgramData\$CompanyName"}
-$LogFilePath = "$LogFolder\Logs"
-$LogFile = "$LogFilePath\Sysinternals-Suite.log"
+
+$LogFolder = "C:\Windows\Logs\Software"
+if (!(Test-Path -path $LogFolder)){$Null = new-item -Path $LogFolder -ItemType Directory -Force}
+
+$LogFile = "$LogFolder\Sysinternals-Suite_$(Get-Date -format yyyy-MM-dd-HHmm).log"
 
 #Create Shortcuts for:
 $ShortCuts = @("Process Explorer", "Process Monitor", "RDCMan.exe", "ZoomIt")
@@ -36,12 +31,7 @@ $InstallPath = "$env:ProgramFiles\SysInternalsSuite\"
 $ExpandPath = "$env:TEMP\SysInternalsSuiteExpanded"
 
 
-<# From: https://www.ephingadmin.com/powershell-cmtrace-log-function/
-$LogFilePath = "$env:TEMP\Logs"
-$LogFile = "$LogFilePath\SetComputerName.log"
-CMTraceLog -Message  "Running Script: $ScriptName | Version: $ScriptVersion" -Type 1 -LogFile $LogFile
 
-#>
 function CMTraceLog {
          [CmdletBinding()]
     Param (
@@ -54,7 +44,7 @@ function CMTraceLog {
 		    [Parameter(Mandatory=$false)]
 		    [int]$Type,
 		    [Parameter(Mandatory=$true)]
-		    $LogFile = "$env:ProgramData\Logs\IForgotToName.log"
+		    $LogFile = "$LogFolder\Sysinternals-Suite_$(Get-Date -format yyyy-MM-dd-HHmm).log"
 	    )
     <#
     Type: 1 = Normal, 2 = Warning (yellow), 3 = Error (red)
@@ -68,22 +58,30 @@ function CMTraceLog {
 	    $LogMessage.Replace("`0","") | Out-File -Append -Encoding UTF8 -FilePath $LogFile
     }
 
-if (!(Test-Path -Path $LogFilePath)){$Null = New-Item -Path $LogFilePath -ItemType Directory -Force}
 
+
+
+CMTraceLog -Message  "--------------------------------------------------------" -Type 1 -LogFile $LogFile
 CMTraceLog -Message  "Running Script: $ScriptName | Version: $ScriptVersion" -Type 1 -LogFile $LogFile
+CMTraceLog -Message  "--------------------------------------------------------" -Type 1 -LogFile $LogFile
 
 $URL = "https://download.sysinternals.com/files/$FileName"
 $DownloadTempFile = "$env:TEMP\$FileName"
 
 CMTraceLog -Message  "Downloading $URL to $DownloadTempFile" -Type 1 -LogFile $LogFile
-$Download = Start-BitsTransfer -Source $URL -Destination $DownloadTempFile -DisplayName $FileName
 
+$progresspreference = 'silentlyContinue'
+$Download = Invoke-WebRequest $URL -OutFile $DownloadTempFile
+$progressPreference = 'Continue'
 
 
 #Write-Output "Downloaded Version Newer than Installed Version, overwriting Installed Version"
 CMTraceLog -Message  "Downloaded Version Newer than Installed Version, overwriting Installed Version" -Type 1 -LogFile $LogFile
 CMTraceLog -Message  "Expanding to $InstallPath" -Type 1 -LogFile $LogFile
+
+$progresspreference = 'silentlyContinue'
 Expand-Archive -Path $env:TEMP\$FileName -DestinationPath $InstallPath -Force
+$progressPreference = 'Continue'
 
 #ShortCut Folder
 if (!(Test-Path -path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\SysInternals")){$NULL = New-Item -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\SysInternals" -ItemType Directory}
@@ -168,6 +166,6 @@ else
 
 
 
-
-
+CMTraceLog -Message  "--------------------------------------------------------" -Type 1 -LogFile $LogFile
+CMTraceLog -Message  "                       Finished                         " -Type 1 -LogFile $LogFile
 CMTraceLog -Message  "--------------------------------------------------------" -Type 1 -LogFile $LogFile
