@@ -8,9 +8,6 @@ Still a work in progress...
 #>
 
 
-try {$tsenv = new-object -comobject Microsoft.SMS.TSEnvironment}
-catch{Write-Output "Not in TS"}
-
 
 
 
@@ -30,19 +27,17 @@ $PSTranscriptionMode = "Enable"
 
 
 #Script Vars:
-$ScriptVersion = "22.03.07.01"
-if ($tsenv){
-    $LogFolder = $tsenv.value('CompanyFolder')#Company Folder is set during the TS Var at start of TS.
-    $CompanyName = $tsenv.value('CompanyName')
-    }
-if (!($CompanyName)){$CompanyName = "RecastSoftwareIT"}#If CompanyName / CompanyFolder info not found in TS Var, use this.
-if (!($LogFolder)){$LogFolder = "$env:ProgramData\$CompanyName"}
-$LogFilePath = "$LogFolder\Logs"
-$LogFile = "$LogFilePath\MachineCustomizations.log"
-$PSTranscriptsFolder = "$LogFolder\PSTranscripts"
+$ScriptName = "Machine Customizations"
+$ScriptVersion = "22.05.20.01"
 
 
-if (!(Test-Path -path $LogFilePath)){$Null = new-item -Path $LogFilePath -ItemType Directory -Force}
+$LogFolder = "C:\Windows\Logs\Software"
+$LogFile = "$LogFolder\MachineCustomizations_$(Get-Date -format yyyy-MM-dd-HHmm).log"
+
+$PSTranscriptsFolder = "C:\Windows\Logs\PSTranscripts"
+
+# Create Log folders if they do not exist
+if (!(Test-Path -path $LogFolder)){$Null = new-item -Path $LogFolder -ItemType Directory -Force}
 if (!(Test-Path -path $PSTranscriptsFolder)){$Null = new-item -Path $PSTranscriptsFolder -ItemType Directory -Force}
 
 
@@ -63,7 +58,7 @@ function CMTraceLog {
 		    [int]$Type,
 		
 		    [Parameter(Mandatory=$true)]
-		    $LogFile = "$env:ProgramData\Log.log"
+		    $LogFile = "$LogFolder\MachineCustomizations_$(Get-Date -format yyyy-MM-dd-HHmm).log"
 	    )
     <#
     Type: 1 = Normal, 2 = Warning (yellow), 3 = Error (red)
@@ -129,13 +124,9 @@ function Set-PSTranscriptionLogging {
 
 }
 
-CMTraceLog -Message  "---------------------------------" -Type 1 -LogFile $LogFile
-CMTraceLog -Message  "Starting OSD Customization Script" -Type 1 -LogFile $LogFile
-#Script Below
-Write-Output "Company Name: $CompanyName"
-Write-Output "Log Folder: $LogFolder"
-Write-Output "Log File Path: $LogFilePath"
-Write-Output "PS Transcripts Folder: $PSTranscriptsFolder"
+CMTraceLog -Message  "--------------------------------------------------------" -Type 1 -LogFile $LogFile
+CMTraceLog -Message  "Running Script: $ScriptName | Version: $ScriptVersion   " -Type 1 -LogFile $LogFile
+CMTraceLog -Message  "--------------------------------------------------------" -Type 1 -LogFile $LogFile
 
 
 
@@ -219,3 +210,10 @@ if ($ShowRunasDifferentuserinStart -eq $True){
     if (!(Test-Path -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer")){New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer"}
     New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "ShowRunasDifferentuserinStart" -PropertyType DWORD -Value 1 -Force -Verbose
     }
+
+
+
+
+CMTraceLog -Message  "--------------------------------------------------------" -Type 1 -LogFile $LogFile
+CMTraceLog -Message  "                       Finished                         " -Type 1 -LogFile $LogFile
+CMTraceLog -Message  "--------------------------------------------------------" -Type 1 -LogFile $LogFile
