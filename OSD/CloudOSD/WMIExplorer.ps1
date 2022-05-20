@@ -6,11 +6,10 @@ Creates shortcut in Start Menu for the items in $Shortcuts Variable
 Shortcut Variable based on $_.VersionInfo.InternalName of the exe file for the one you want a shortcut of.
 #>
 
-try {$tsenv = new-object -comobject Microsoft.SMS.TSEnvironment}
-catch{Write-Output "Not in TS"}
+
 
 $ScriptName = "WMIExplorer"
-$ScriptVersion = "22.03.07.01"
+$ScriptVersion = "22.05.20.01"
 
 $LogFolder = "C:\Windows\Logs\Software"
 $LogFile = "$LogFolder\WmiExplorer_$(Get-Date -format yyyy-MM-dd-HHmm).log"
