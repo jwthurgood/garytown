@@ -3,7 +3,7 @@ Gary Blok @gwblok Recast Software
 Used with OSDCloud Edition OSD
 #>
 
-#Download WallPaper from GitHub
+#Download CMTrace from GitHub
 $CMTraceURL = "https://raw.githubusercontent.com/jwthurgood/garytown/master/OSD/CloudOSD/CMTrace.exe"
 Invoke-WebRequest -UseBasicParsing -Uri $CMTraceURL -OutFile "$env:TEMP\CMTrace.exe"
 
