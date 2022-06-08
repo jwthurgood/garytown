@@ -19,7 +19,7 @@ $HideVariables = @('_OSDOAF','_SMSTSReserved','_SMSTSTaskSequence', '_TSSub')
 $tsenv = New-Object -COMObject Microsoft.SMS.TSEnvironment 
 $logPath = $tsenv.Value("_SMSTSLogPath")
 $now = Get-Date -Format "yyyy-MM-dd-HH-mm-ss"
-$logFile = "TSVariables-$now.log"
+$logFile = "TSVariables_$now.log"
 $logFileFullName = Join-Path -Path $logPath -ChildPath $logFile
 
 function MatchArrayItem {
