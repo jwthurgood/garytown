@@ -63,7 +63,7 @@ try {
     }
     catch {}
 
-    $filename =  Join-Path -Path "$LogPath" -ChildPath "$($CmpName )-$($dt).zip"
+    $filename =  Join-Path -Path "$LogPath" -ChildPath "$($CmpName )_$($dt).zip"
     ZipFiles -ZipFileName $filename -SourceDir $source
 
     Remove-Item -Path "$source" -Recurse -Force -ErrorAction SilentlyContinue
