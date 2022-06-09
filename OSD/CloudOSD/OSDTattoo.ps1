@@ -1,5 +1,5 @@
 # Name: OSDTattoo
-# Authors: Jörgen Nilsson CCMEXEC
+# Authors: JÃ¶rgen Nilsson CCMEXEC
 # Script to tattoo the registry with deployment variables during OS deployment 
 $RegKeyName = "DWT\OSD"
 
@@ -19,7 +19,7 @@ $TaskSequenceID = $tsenv.value("_SMSTSPackageID")
 $Packagename = $tsenv.value("_SMSTSPackageName")
 $MachineName = $env:computername
 $Installationmode = $tsenv.value("_SMSTSLaunchMode")
-$TSVersion= $tsenv.value("TSVersion")
+$TSVersion = $tsenv.value("TSVersion")
 
 #Calculate time elapsed
 $OSDTImeSpan = New-TimeSpan -start $OSDstartTime -end $installtime
