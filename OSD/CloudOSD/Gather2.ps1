@@ -44,9 +44,20 @@ $EncryptionMethods = @{ 0 = "UNSPECIFIED";
                         
 function Get-OSDStartTime {    
 
-        $OSDStartTime = Get-Date -Format G 
-        $TSvars.Add("OSDStartTime", $OSDStartTime)                    
-}        
+    $OSDStartTime = Get-Date -Format G 
+    $TSvars.Add("OSDStartTime", $OSDStartTime)                    
+}
+
+
+function Get-OSDComputerName {
+
+    $Serial = (Get-WmiObject -class:win32_bios).SerialNumber
+    $ComputerName = $Serial
+    $ComputerName = $ComputerName -replace '\s',''
+    $ComputerName = $ComputerName.substring(0, [System.Math]::Min(15, $ComputerName.Length))
+    $TSvars.Add("OSDComputerName", $ComputerName)                    
+}
+
 
 function Get-DiskInfo {
 
@@ -281,6 +292,7 @@ function Get-ComputerInformation {
 }
 
 Get-OSDStartTime
+Get-OSDComputerName
 Get-ComputerSystemProductInfo
 Get-ComputerSystemInfo
 Get-Product
