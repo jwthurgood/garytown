@@ -45,7 +45,8 @@ $EncryptionMethods = @{ 0 = "UNSPECIFIED";
 function Get-OSDStartTime {    
 
     $OSDStartTime = Get-Date -Format G 
-    $TSvars.Add("OSDStartTime", $OSDStartTime)                    
+    $TSvars.Add("OSDStartTime", $OSDStartTime)
+    $TSvars.Add("TSDate", $OSDStartTime)
 }
 
 
