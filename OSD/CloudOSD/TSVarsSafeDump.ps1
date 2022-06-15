@@ -12,7 +12,8 @@
 
 # Config Start
 
-$HideVariables = @('_OSDOAF','_SMSTSReserved','_SMSTSTaskSequence', '_TSSub')
+#$HideVariables = @('_OSDOAF','_SMSTSReserved','_SMSTSTaskSequence', '_TSSub')
+$HideVariables = ""
 
 # Config End
 
